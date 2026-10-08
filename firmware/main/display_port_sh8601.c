@@ -74,6 +74,7 @@ static uint8_t s_fw[4][4][4];                   /* FIT: [row in group][px in gro
 void display_port_set_inverted(bool inverted) { s_inverted = inverted; }
 bool board_is_round(void) { return s_round; }
 bool board_is_watch(void) { return s_watch; }
+bool board_is_lcd40(void) { return false; }
 int  board_pwr_sense_pin(void) { return s_round ? R_PIN_PWR_SENSE : s_watch ? W_PIN_PWR_SENSE : -1; }
 void display_port_frame_origin(int *px, int *py) { *px = s_fx; *py = s_fy; }
 /* the boards whose resets are GPIOs (the 1.75C, the watch): the pads held through a deep sleep */

@@ -79,6 +79,15 @@ extern const uint8_t tokenizer_bin_start[] asm("_binary_tokenizer_bin_start");
 extern const uint8_t tokenizer_bin_end[]   asm("_binary_tokenizer_bin_end");
 
 static const char *TAG = "pocket-tank";
+/* internal DMA-capable RAM, logged where it is tightest (2026-10-08, spec R#8):
+ * the display stripes, update mode's radio, the boot's time sync, and the
+ * running tank with the advisor and audio up. Every board logs it. */
+static void log_dma(const char *when) {
+    ESP_LOGI(TAG, "dma %s: internal DMA free %u, largest block %u, internal free %u", when,
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_largest_free_block(MALLOC_CAP_DMA | MALLOC_CAP_INTERNAL),
+             (unsigned)heap_caps_get_free_size(MALLOC_CAP_INTERNAL));
+}
 static tank_t tank;
 static uint16_t *fb[PLAN_FB_COUNT];
 static bool llm_ok = false;
@@ -786,6 +795,8 @@ static void tank_task(void *arg) {
            3.93 s (~40 ms a decision per frame a second; the bigger glasses pay more). Strato: decisions
            past 4 s are too slow, so a light tank no longer spends the model's time on frames past 25.
            Always yield >= 1 tick. */
+        { static bool dma_logged;          /* the running tank's DMA budget, once, a minute after boot (spec R#8) */
+          if (!dma_logged && now > 60 * 1000000LL) { log_dma("running"); dma_logged = true; } }
         int rest = (int)((FRAME_MIN_MS * 1000 - (esp_timer_get_time() - now)) / 1000);
         slept_from = esp_timer_get_time(); tail_us += slept_from - pf_tail;
         vTaskDelay(pdMS_TO_TICKS(rest < 1 ? 1 : rest));
@@ -878,6 +889,7 @@ void app_main(void) {
        internal heap to itself. Back from it, the normal boot goes on. */
     render_clock_us = esp_timer_get_time;    /* per-stage frame profiling in the display log */
     display_port_init();
+    log_dma("after the display");
     if (pwr_sensed()) {                      /* the PWR key's sense line: a plain input (a deep-sleep wake left it an RTC pad) */
         rtc_gpio_deinit(PWR_SENSE);
         gpio_config_t sense = { .pin_bit_mask = 1ULL << PWR_SENSE, .mode = GPIO_MODE_INPUT };
@@ -893,10 +905,11 @@ void app_main(void) {
     if (board_is_watch()) battery_port_pin_rail("aldo2");   /* the watch's panel power enable is pulled up to ALDO2 */
     battery_port_trim_rails();        /* the schematic's unused outputs off (docs/HANDOFF.md, the battery pass) */
     battery_port_key_init();          /* the PWR key: sleep / power-off IRQs on, the power-on press cleared */
-    if (update_mode_pending()) { brightness_apply(false); update_mode_run(fb[0]); }
+    if (update_mode_pending()) { brightness_apply(false); log_dma("before update mode"); update_mode_run(fb[0]); }
     else if (provision_mode_wanted()) provision_mode_run(fb[0]);   /* just installed, no network yet: the page's Wi-Fi step, the glass dark */
     s_rtc = rtc_port_init(board_i2c_bus());   /* wall clock for the ravenous rule (before the clockless night's sync) */
     net_clock_boot(fb[0]);            /* no RTC chip and a saved network: the time from the internet, before the advisor takes the heap */
+    log_dma("after time sync");
     /* the advisor's hot buffers (~70 KB of internal SRAM, advisor_llm_esp.c)
        come before the discretionary caches below: the LLM is not optional */
     /* model: mmap the raw partition; weights are read through the flash cache */

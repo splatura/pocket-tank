@@ -38,6 +38,9 @@ menu "pocket-tank"
         bool "Drive the FNK0104S's ST7796S over 4-wire SPI"
         default n
         depends on POCKET_TANK_LCD40 && !POCKET_TANK_DISPLAY_SH8601
+        help
+            The ST7796S 320x480 IPS panel over 4-wire SPI, driven landscape with a PWM
+            backlight (display_port_st7796.c; docs/board-fnk0104s.md). Off = stub display port.
     config POCKET_TANK_LCD40_SPI_MHZ
         int "ST7796S SPI clock (MHz): 40 is the release default; 80 only after the bench soak (docs/board-fnk0104s.md)"
         default 40
