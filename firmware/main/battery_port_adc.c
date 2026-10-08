@@ -7,6 +7,8 @@ bool battery_port_init(i2c_master_bus_handle_t bus) { (void)bus; return false; }
 bool battery_port_read(float *frac, bool *charging) { (void)frac; (void)charging; return false; }
 int  battery_port_state(void) { return BAT_ON_BATTERY; }
 bool battery_port_poweroff(void) { return false; }
+bool battery_port_can_power_off(void) { return false; }
+bool battery_port_has_pwr_key(void) { return false; }
 void battery_port_key_init(void) {}
 int  battery_port_key_poll(void) { return 0; }
 void battery_port_key_trace(int seconds) { (void)seconds; }

@@ -9,6 +9,13 @@ bool battery_port_init(i2c_master_bus_handle_t bus);   /* false = no PMIC, meter
 bool battery_port_read(float *frac, bool *charging);   /* cached ~1 s; false = hide meter */
 int  battery_port_state(void);                          /* BAT_* from the same read: the cable, the charger's phase */
 bool battery_port_poweroff(void);                      /* PMIC soft power-off; false = no PMIC */
+/* what this board's power side can do (2026-10-08, the FNK0104S: a battery
+ * meter with no PMIC behind it - spec R#1). main.c asks these, never "is
+ * there a PMIC":
+ *   can_power_off - a soft cut the PWR key boots back from (the AXP2101)
+ *   has_pwr_key   - a PWR key the PMIC reports; without one BOOT is the sleep key */
+bool battery_port_can_power_off(void);
+bool battery_port_has_pwr_key(void);
 /* the PWR key (2026-09-16): THE button. It is the AXP2101's PWRON pin, so it
  * is the only key that can bring the board back from a PMIC power-off - and
  * so it is the sleep key too. key_init enables the short/long-press IRQs,

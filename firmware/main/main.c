@@ -60,7 +60,7 @@
  * from which ONLY that key (or USB) can bring the board back, so it has to
  * be the one key the keeper ever presses - press to sleep, press to wake. */
 #define BTN_SLEEP GPIO_NUM_0
-static bool s_pmic;                        /* an AXP2101 answered: the PWR key exists, power-off is real */
+static bool s_meter;                       /* a battery meter answered (the AXP2101 gauge, or the FNK0104S's divider) */
 static bool s_rtc;                         /* an RTC chip answered: the wall clock survives a PMIC power-off. Without one
                                               (the round 1.75C) the night is a DEEP sleep - the ESP32's own clock keeps
                                               the time - and only the PWR key's long press cuts the power */
@@ -225,7 +225,7 @@ static void nvs_u8_put(const char *key, int v) {
 }
 static bool net_saved(void) { char s[NET_SSID_MAX + 1], p[NET_PASS_MAX + 1]; return net_port_creds_get(s, p); }
 static bool night_powers_off(void) {        /* the night: a power-off (the clock survives it, or the internet gives it back) */
-    if (!s_pmic) return false;
+    if (!battery_port_can_power_off()) return false;
     return s_rtc || (net_saved() && nvs_u8("netclk", 0) && nvs_u8("netok", 0));
 }
 static int64_t s_rebase_unix, s_rebase_us;  /* a first sync, applied once the save has loaded on the old clock */
@@ -250,7 +250,9 @@ static void sync_worker(void *arg) {
     vTaskDelete(NULL);
 }
 static void net_clock_boot(uint16_t *fb) {  /* before the tank exists: the radio has the internal heap to itself */
-    if (s_rtc || !s_pmic || !net_saved()) return;
+    /* the old !s_pmic here stood for "the clock is lost at power-on"; the rule is
+     * now "no RTC chip", which the round board always met and the FNK0104S now meets */
+    if (s_rtc || !net_saved()) return;
     bool real = nvs_u8("netclk", 0), set = clock_port_now_unix() != 0, ok_before = nvs_u8("netok", 0);
     if (real && set && ok_before) return;    /* a deep-sleep wake on a good clock: it ran all night */
     int64_t u = 0, at = 0;
@@ -466,7 +468,7 @@ static void pwr_key_poll(int64_t now) {
 #define BTN_DEBOUNCE_US 50000
 static void sleep_button_poll(int64_t now) {
     if (gpio_get_level(BTN_SLEEP)) {
-        if (!s_pmic && s_btn_armed && s_btn_low_since && !s_btn_used && now - s_btn_low_since >= BTN_DEBOUNCE_US)
+        if (!battery_port_has_pwr_key() && s_btn_armed && s_btn_low_since && !s_btn_used && now - s_btn_low_since >= BTN_DEBOUNCE_US)
             enter_sleep();
         s_btn_armed = true; s_btn_low_since = 0; s_btn_used = false;
     } else if (s_btn_armed) {
@@ -896,7 +898,7 @@ void app_main(void) {
         gpio_config(&sense);
     }
     touch_port_init();
-    s_pmic = battery_port_init(board_i2c_bus());
+    s_meter = battery_port_init(board_i2c_bus());
     if (!board_has_expander()) {      /* not positively the 1.8: on the round board A3V3 feeds the ES7210 whole,
                                          and off, it clamps the I2C bus (battery_port.h) - never cut it on a guess */
         battery_port_pin_rail("aldo1");

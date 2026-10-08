@@ -53,6 +53,8 @@ static bool rd(uint8_t reg, uint8_t *val) {
 
 /* COMMON_CONFIG bit0 = soft power-off: every rail drops within ms, draw falls
  * to the PMIC's quiescent few uA. A PWR-button press powers the board back on. */
+bool battery_port_can_power_off(void) { return s_dev != NULL; }
+bool battery_port_has_pwr_key(void)   { return s_dev != NULL; }
 bool battery_port_poweroff(void) {
     if (!s_dev) return false;
     uint8_t v;
