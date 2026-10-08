@@ -58,6 +58,7 @@ static uint8_t s_brightness = 0xFF;
 static bool s_light_owed;                    /* after init / sleep: the backlight comes up after one whole frame */
 static int64_t s_slpout_us;                  /* SLPOUT's time: SLPIN may not follow within 120 ms (datasheet p.159) */
 static int64_t s_prof_wait, s_prof_send;
+static bool s_ok;                            /* init finished: the bus, the IO, the stripes and the semaphore all exist */
 
 static bool on_done(esp_lcd_panel_io_handle_t io, esp_lcd_panel_io_event_data_t *ev, void *ctx) {
     (void)io; (void)ev; (void)ctx;            /* (ev is NULL from the SPI panel IO) */
@@ -136,6 +137,7 @@ static void send_frame(const uint16_t *fb) {
     }
 }
 void display_port_flush(const uint16_t *fb) {
+    if (!s_ok) return;                                    /* a failed init (logged once there): no panel to feed */
     send_frame(fb);
     if (s_light_owed) { drain(); backlight(s_brightness); s_light_owed = false; }   /* a whole picture first: no garbage flash */
 }
@@ -176,11 +178,13 @@ bool display_port_init(void) {
     uint16_t *black = heap_caps_calloc(TANK_W * TANK_H, 2, MALLOC_CAP_SPIRAM);
     if (black) { send_frame(black); heap_caps_free(black); }   /* the glass black before the light (the stripes hold their copies) */
     s_light_owed = true;
+    s_ok = true;
     ESP_LOGI(TAG, "board: the FNK0104S (ST7796S 480x320 over SPI at %d MHz)", CONFIG_POCKET_TANK_LCD40_SPI_MHZ);
     return true;
 }
 
 void display_port_sleep(void) {                           /* backlight off, DISPOFF, SLPIN (+5 ms), the wire empty first */
+    if (!s_ok) return;
     drain();
     backlight(0);
     s_light_owed = true;                                  /* a brightness change while asleep only records the level */
@@ -190,6 +194,7 @@ void display_port_sleep(void) {                           /* backlight off, DISP
     vTaskDelay(pdMS_TO_TICKS(5));
 }
 void display_port_wake(void) {                            /* SLPOUT (+120 ms), DISPON; the light after one whole frame */
+    if (!s_ok) return;
     cmd(0x11, NULL, 0); s_slpout_us = esp_timer_get_time();
     vTaskDelay(pdMS_TO_TICKS(120));
     cmd(0x29, NULL, 0);
