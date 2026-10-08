@@ -75,4 +75,17 @@ void battery_info(const bat_t *b, int64_t now_unix, int pct, int mv, int state, 
 /* "45M", "2H 15M", "3D 4H" (minutes; < 0 = "-") */
 void battery_fmt_dur(char *buf, int n, int min);
 
+/* a battery meter with no fuel gauge (the FNK0104S, 2026-10-08): the cell's
+ * resting voltage on a LiPo curve, the median of a ring of samples, and a
+ * 2-point hysteresis so the pill does not flicker. An ESTIMATE: valid at a
+ * steady discharge, not while charging (docs/board-fnk0104s.md). */
+float battery_lipo_frac(int mv);
+int   battery_median_mv(const int *mv, int n);       /* n >= 1; sorts a copy */
+int   battery_hyst_pct(int shown_pct, float frac);   /* shown_pct < 0: none shown yet */
+#ifdef TANK_LCD40
+#define BAT_ESTIMATED 1
+#else
+#define BAT_ESTIMATED 0
+#endif
+
 #endif

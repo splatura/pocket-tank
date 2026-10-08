@@ -115,3 +115,29 @@ void battery_fmt_dur(char *buf, int n, int min) {
         if (hh) snprintf(buf, n, "%dD %dH", d, hh); else snprintf(buf, n, "%dD", d);
     }
 }
+
+static const struct { int mv; float f; } LIPO[] = {           /* a single cell at rest, 0..100% (a common 1C-rested table) */
+    { 3300, 0.00f }, { 3610, 0.05f }, { 3690, 0.10f }, { 3710, 0.15f }, { 3730, 0.20f }, { 3750, 0.25f },
+    { 3770, 0.30f }, { 3790, 0.35f }, { 3800, 0.40f }, { 3820, 0.45f }, { 3840, 0.50f }, { 3850, 0.55f },
+    { 3870, 0.60f }, { 3910, 0.65f }, { 3950, 0.70f }, { 3980, 0.75f }, { 4020, 0.80f }, { 4080, 0.85f },
+    { 4110, 0.90f }, { 4150, 0.95f }, { 4200, 1.00f },
+};
+float battery_lipo_frac(int mv) {
+    const int n = (int)(sizeof LIPO / sizeof LIPO[0]);
+    if (mv <= LIPO[0].mv) return 0.0f;
+    if (mv >= LIPO[n - 1].mv) return 1.0f;
+    for (int i = 1; i < n; i++)
+        if (mv <= LIPO[i].mv) return LIPO[i - 1].f + (LIPO[i].f - LIPO[i - 1].f) * (float)(mv - LIPO[i - 1].mv) / (float)(LIPO[i].mv - LIPO[i - 1].mv);
+    return 1.0f;
+}
+int battery_median_mv(const int *mv, int n) {
+    int s[16]; if (n > 16) n = 16;
+    for (int i = 0; i < n; i++) s[i] = mv[i];
+    for (int i = 1; i < n; i++) for (int j = i; j > 0 && s[j - 1] > s[j]; j--) { int t = s[j]; s[j] = s[j - 1]; s[j - 1] = t; }
+    return n % 2 ? s[n / 2] : (s[n / 2 - 1] + s[n / 2]) / 2;
+}
+int battery_hyst_pct(int shown_pct, float frac) {
+    int p = (int)(frac * 100.0f + 0.5f);
+    if (shown_pct < 0 || p >= shown_pct + 2 || p <= shown_pct - 2) return p;
+    return shown_pct;
+}

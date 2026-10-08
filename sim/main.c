@@ -2858,6 +2858,17 @@ static int selftest_battery(void) {
     BCHECK(moved == 1, "the sweep: charging %s, full %s", moved & 1 ? "moves" : "STILL", moved & 2 ? "MOVES" : "still");
     printf("selftest-battery: charged in ~%.0f min (learned %.1f %%/h); the bolt %d px on the cable, none on battery; the sweep only while charging\n",
            (100 - plug) / (b.h.charge_x10 / 10.0) * 60, b.h.charge_x10 / 10.0, bolt_px[BAT_CHARGING]);
+    /* the FNK0104S's estimate (2026-10-08): a LiPo's resting curve, the median of a ring, a 2% hysteresis */
+    BCHECK(battery_lipo_frac(4200) == 1.0f && battery_lipo_frac(4300) == 1.0f, "a full cell (and above) is 100%%");
+    BCHECK(battery_lipo_frac(3300) == 0.0f && battery_lipo_frac(3000) == 0.0f, "3.30 V (and below) is empty");
+    BCHECK(fabsf(battery_lipo_frac(3840) - 0.50f) < 0.01f, "3.84 V is half: %.3f", battery_lipo_frac(3840));
+    { float last = -1; bool mono = true; for (int mv = 3200; mv <= 4300; mv += 5) { float f = battery_lipo_frac(mv); mono &= f >= last; last = f; }
+      BCHECK(mono, "the curve never falls as the voltage rises"); }
+    { int s[5] = { 3900, 3100, 3905, 4200, 3898 }; BCHECK(battery_median_mv(s, 5) == 3900, "the median ignores a sag and a spike: %d", battery_median_mv(s, 5)); }
+    { int s[4] = { 3800, 3810, 3820, 3830 }; BCHECK(battery_median_mv(s, 4) == 3815, "an even ring's median is the middle pair's mean"); }
+    BCHECK(battery_hyst_pct(50, 0.51f) == 50 && battery_hyst_pct(50, 0.53f) == 53 && battery_hyst_pct(50, 0.48f) == 48 && battery_hyst_pct(50, 0.49f) == 50,
+           "the shown percent moves only past 2 points");
+    BCHECK(battery_hyst_pct(-1, 0.42f) == 42, "a first reading is shown as it is");
 #undef BCHECK
     if (!fails) printf("selftest-battery: ok\n");
     return fails ? 1 : 0;

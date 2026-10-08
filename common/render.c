@@ -2742,7 +2742,7 @@ void render_battery_info(uint16_t *fb, int stride, const bat_info_t *bi, float c
         snprintf(lab[nr], sizeof lab[nr], "BATTERY LIFE");
         battery_fmt_dur(d, sizeof d, bi->life_min); snprintf(val[nr], sizeof val[nr], "~%s", d); nr++;
     }
-    const int W = 336, H = (bi->mv > 0 ? 170 : 154) + nr * 26, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
+    const int W = 336, H = (bi->mv > 0 ? 170 + (BAT_ESTIMATED ? 10 : 0) : 154) + nr * 26, X = (TANK_W - W) / 2, Y = (TANK_H - H) / 2;
     src_t bg = src_color(0x04141a, 1.0f);
     for (int y = Y; y < Y + H; y++) span(&c, X, X + W - 1, y, &bg, 240);
     rect_edge(&c, X, Y, W, H, 0x9fd8e2); rect_edge(&c, X + 1, Y + 1, W - 2, H - 2, 0x1c2f36);
@@ -2773,6 +2773,10 @@ void render_battery_info(uint16_t *fb, int stride, const bat_info_t *bi, float c
     if (bi->mv > 0) {
         char v[32]; snprintf(v, sizeof v, "%d.%02d V", bi->mv / 1000, bi->mv % 1000 / 10);
         draw_text_8px(&c, X + (W - (int)strlen(v) * 6 + 1) / 2, Y + H - 20, 0x5f7f86, v);
+        if (BAT_ESTIMATED) {                                 /* no fuel gauge on this board: say so (2026-10-08) */
+            const char *e = "AN ESTIMATE FROM THE VOLTAGE";
+            draw_text_8px(&c, X + (W - (int)strlen(e) * 6 + 1) / 2, Y + H - 20 + 10, 0x5f7f86, e);
+        }
     }
 }
 
