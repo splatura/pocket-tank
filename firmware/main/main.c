@@ -399,8 +399,10 @@ int device_sleep_cfg(int mask) {
     return sleep_cfg();
 }
 static void deep_sleep_now(int wake_after_s) {
-    if (pwr_sensed()) {                         /* the PWR key's sense line (driven both ways by the board: no pull) wakes it,
-                                                   as ext1 - the RTC peripherals can power down, which ext0 would keep up */
+    /* the board's peripherals first, for every board whose pins are not held by an
+       IO expander (the round board, the watch, the FNK0104S - 2026-10-08, spec R#2);
+       then the wake source: the PWR key's sense line, or BOOT */
+    if (!board_has_expander()) {
         int cfg = sleep_cfg();
         bool tp_slept = (cfg & SLEEP_TOUCH) && touch_port_deep_sleep();
         if (cfg & SLEEP_PANEL) display_port_deep_standby();
@@ -408,13 +410,16 @@ static void deep_sleep_now(int wake_after_s) {
         if (cfg & SLEEP_BUS) display_port_deep_sleep_bus();   /* after the deep standby: that command needs the bus */
         char why[8]; snprintf(why, sizeof why, "deep %d", tp_slept ? cfg : cfg & ~SLEEP_TOUCH);   /* what took: the log is gone with the USB port */
         batlog_add(battery_pct(), battery_port_vbat_mv(), 0, true, why);   /* mirrored to NVS: the wake reads the night's cost back */
-        ESP_LOGI(TAG, "deep sleep (the PWR key wakes%s) | touch %s, panel %s, IMU %s (sleepcfg %d)", wake_after_s > 0 ? ", or the timer" : "",
-                 tp_slept ? "asleep" : "in reset", cfg & SLEEP_PANEL ? "deep standby" : "sleep-in",
-                 cfg & SLEEP_IMU ? "powered down" : "sensors off", cfg);
-        if (cfg & SLEEP_BUS) ESP_LOGI(TAG, "QSPI clock + data held low");
+        ESP_LOGI(TAG, "deep sleep prep | touch %s, panel %s, IMU %s (sleepcfg %d)", tp_slept ? "asleep" : "in reset",
+                 cfg & SLEEP_PANEL ? "deep standby" : "sleep-in", cfg & SLEEP_IMU ? "powered down" : "sensors off", cfg);
+        if (cfg & SLEEP_BUS) ESP_LOGI(TAG, "display bus clock + data held low");
+        display_port_deep_sleep_pins(tp_slept);
+    }
+    if (pwr_sensed()) {                         /* the PWR key's sense line (driven both ways by the board: no pull) wakes it,
+                                                   as ext1 - the RTC peripherals can power down, which ext0 would keep up */
+        ESP_LOGI(TAG, "deep sleep (the PWR key wakes%s)", wake_after_s > 0 ? ", or the timer" : "");
         rtc_gpio_pullup_dis(PWR_SENSE); rtc_gpio_pulldown_dis(PWR_SENSE);
         esp_sleep_enable_ext1_wakeup(1ULL << PWR_SENSE, ESP_EXT1_WAKEUP_ANY_HIGH);
-        display_port_deep_sleep_pins(tp_slept);
     } else {
         ESP_LOGI(TAG, "deep sleep (BOOT wakes%s)", wake_after_s > 0 ? ", or the timer" : "");
         rtc_gpio_pullup_en(BTN_SLEEP); rtc_gpio_pulldown_dis(BTN_SLEEP);
@@ -442,6 +447,8 @@ static void enter_poweroff(void) {
     display_port_sleep();
     vTaskDelay(pdMS_TO_TICKS(50));
     if (battery_port_poweroff()) vTaskDelay(pdMS_TO_TICKS(1000));  /* rails drop here */
+    while (!gpio_get_level(BTN_SLEEP) || pwr_sense_down()) vTaskDelay(pdMS_TO_TICKS(10));   /* wake triggers are levels: never arm them held (Review Focus 4) */
+    vTaskDelay(pdMS_TO_TICKS(30));
     deep_sleep_now(0);   /* no PMIC (QEMU / bring-up) or write failed */
 }
 void device_poweroff(void) { enter_poweroff(); }   /* director `poweroff` */
@@ -624,8 +631,9 @@ static void tank_task(void *arg) {
         if (imu_port_moving()) audio_port_prewarm();   /* in a hand: the codec stays warm (docs/AUDIO.md) */
         if (imu_port_handled()) tank_handled(&tank);   /* ... and the light stays on (two polls of motion: a bump on the desk is not a pick-up) */
         bool inv = tank_orient(&tank, imu_port_inverted());   /* the live flip, or the way up settings' ROTATION locked (0.3.2) */
-#ifdef TANK_WATCH
-        inv = tank_screen_turned(&tank);  /* worn on a wrist the live flip never runs (the arm swings through every angle):
+#if TANK_SCREEN_MANUAL
+        inv = tank_screen_turned(&tank);  /* a tank whose way up is the keeper's (the watch on a wrist, the FNK0104S with no IMU):
+                                             the live flip never runs (on a wrist the arm swings through every angle);
                                              the way up is the keeper's setting, or what AUTO learned from the taps (tank.h) */
 #endif
         display_port_set_inverted(inv);   /* per-frame, so a flip lands between flushes */
@@ -870,6 +878,7 @@ void device_provision_request(void) {
 void app_main(void) {
     ESP_LOGI(TAG, "pocket-tank v%s %s (build %s) for %s boot%s", PT_RELEASE, PT_RELEASE_STAGE, version_port_string(), PT_BOARD,
              esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT0 || esp_sleep_get_wakeup_cause() == ESP_SLEEP_WAKEUP_EXT1 ? " (woken by button)" : "");
+    rtc_gpio_deinit(BTN_SLEEP);   /* an ext0 wake left it an RTC pad (Espressif: restore before digital use) */
     gpio_config_t btn = { .pin_bit_mask = 1ULL << BTN_SLEEP, .mode = GPIO_MODE_INPUT,
                           .pull_up_en = GPIO_PULLUP_ENABLE };
     gpio_config(&btn);
@@ -908,6 +917,10 @@ void app_main(void) {
     if (board_is_watch()) battery_port_pin_rail("aldo2");   /* the watch's panel power enable is pulled up to ALDO2 */
     battery_port_trim_rails();        /* the schematic's unused outputs off (docs/HANDOFF.md, the battery pass) */
     battery_port_key_init();          /* the PWR key: sleep / power-off IRQs on, the power-on press cleared */
+    if (TANK_SCREEN_MANUAL) {                 /* the keeper's way up, from the save, before the tank exists (progression_peek_screen) */
+        bool inv = progression_peek_screen();
+        display_port_set_inverted(inv); touch_port_set_inverted(inv);
+    }
     if (update_mode_pending()) { brightness_apply(false); log_dma("before update mode"); update_mode_run(fb[0]); }
     else if (provision_mode_wanted()) provision_mode_run(fb[0]);   /* just installed, no network yet: the page's Wi-Fi step, the glass dark */
     s_rtc = rtc_port_init(board_i2c_bus());   /* wall clock for the ravenous rule (before the clockless night's sync) */
