@@ -11,9 +11,8 @@ acceptance (docs/superpowers/specs/2026-10-08-fnk0104s-board-design.md).
 Sources:
 - Freenove's repository, github.com/Freenove/Freenove_ESP32_S3_Display: the
   4.0-inch schematic, the `FNK0104S_4.0_320x480_ST7796.h` TFT_eSPI setup, the
-  example sketches' pin defines and the bundled datasheets. The commit read
-  was not recorded when the design was written; record it here on the first
-  bench day.
+  example sketches' pin defines and the bundled datasheets, as of commit
+  90004f874ed567b3c09d534d021172cb716e61a1 (2026-08-10).
 - QDtech's manual, lcdwiki.com/res/ES3C40P/4.0inch_IPS_ESP32-S3_ES3C40P_User_Manual.pdf.
 - lmoiseichuk's port of the 2.8-inch sibling (github.com/lmoiseichuk/pocket-tank-cyd,
   its CYD notes), as a reference only. Nothing is merged from it.

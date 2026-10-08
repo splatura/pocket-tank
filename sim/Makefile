@@ -56,9 +56,9 @@ ifdef NOMODEL
 SELFTESTS := $(filter-out --selftest-llm,$(SELFTESTS))
 endif
 
-# `make check` tests the rectangle; `make ROUND=1 check` / `make WATCH=1 check`
-# the same selftests in that board's world; `make check-all` all three - the
-# gate for anything in common/ (docs/BOARDS.md)
+# `make check` tests the rectangle; `make ROUND=1 check` / `make WATCH=1 check` /
+# `make FNK=1 check` the same selftests in that board's world; `make check-all`
+# every board's world - the gate for anything in common/ (docs/BOARDS.md)
 check: $(OUT)
 	@set -e; for test in $(SELFTESTS); do echo "RUN $(OUT) $$test"; ./$(OUT) "$$test"; done
 

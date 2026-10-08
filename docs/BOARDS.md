@@ -41,14 +41,15 @@ pixel instead of a name - fix that instead.
 1. **Write it once, in `common/`.** The platforms only route: the page
    returns what was tapped (`MS_TAP_*`, `SHOP_TAP_*`, ...), the sim's loop and
    the firmware's touch port do the same few lines with it. The route is
-   written twice (sim/main.c and touch_port_ft3168.c + main.c - the three
-   boards share the firmware's), so keep it to a call or two and put the
+   written twice (sim/main.c and touch_port_ft3168.c + main.c - every
+   board shares the firmware's), so keep it to a call or two and put the
    behavior behind it. Sounds go through `tank_emit`, not through the
    platform.
 2. **Lay new page elements out in the box every glass shows whole:** PAGE
    x 56..392, y 60..300 (the modal's box). The watch shows PAGE x 19..428, the
    bowl's circle is at least that wide between those rows; the corners of the
-   page belong to the bezel on two boards out of three. A page that must use
+   page are lost on every board but the 1.8 (the bowl's and the watch's bezel,
+   the FNK0104S's 320 px height). A page that must use
    the corners gets a layout block per board (the milestones page's
    `MSP_*`), not scattered conditions.
 3. **Give the layout a voice.** A test, the director or a tool that needs to
@@ -82,7 +83,7 @@ the bowl and the watch ship in 0.3.0; nothing public until the release):
 | the image | a board marker right after the app descriptor (`net_port_esp.c` `pt_board_marker`, at `PT_BOARD_MARKER_OFFSET` 0x120; kept by `-u pt_board_marker` in firmware/main/CMakeLists.txt). `tools/pt_boards.py` reads it back from a `.bin` |
 | over the air | each board fetches `latest-<PT_BOARD>.json`; `common/update.c` refuses a manifest whose `board` is another (WRONG BOARD, never offered); the download reads the marker back from the slot at its first 4 KB and aborts on another board's (`NET_ERR_BOARD`) - all three share the signing key, so the signature alone would let a bowl install the 1.8's image |
 | the release | `.github/workflows/release.yml` builds `firmware/build`, `build-round`, `build-watch`; `make_ota_manifest.py` names both files from the image's marker (`latest-<board>.json`, `pocket_tank-v<rel>-<board>.bin`) |
-| the installer | `installer.yml` builds the three; `make_installer.py --build-dir <1.8> --board-build <round> --board-build <watch>`: the 1.8 keeps `manifest.json` / `manifest-erase.json`, the others `manifest-<board>[-erase].json`; a board's file that differs from the 1.8's is `<name>-<board>.bin`. The page shows a "Pick your board" step when it carries more than one |
+| the installer | `installer.yml` builds the published boards; `make_installer.py --build-dir <1.8> --board-build <round> --board-build <watch>`: the 1.8 keeps `manifest.json` / `manifest-erase.json`, the others `manifest-<board>[-erase].json`; a board's file that differs from the 1.8's is `<name>-<board>.bin`. The page shows a "Pick your board" step when it carries more than one |
 | pocketank.com/install | `tools/build_site.py` offers a board only once its manifest is LIVE on GitHub Pages - the public resync is the release, so a site publish before it shows the 1.8 alone |
 
 Nothing reaches the public before the release: the dev repo is private, the
@@ -97,7 +98,9 @@ right install puts it back, the save untouched.
 A board can be known to the tools before it ships. `tools/pt_boards.py` lists
 every board (`IDS`, so a stray image is still recognised) and carries a
 published flag per board (`PUBLISHED`). `tools/ci_build.sh` builds the
-published boards only, and `release.yml` and `installer.yml` take their builds
+published boards (with `--known`, every known board: checks.yml's
+`firmware-compile` job, so an unpublished board still compiles under CI's
+ESP-IDF and is never shipped), and `release.yml` and `installer.yml` take their builds
 and the expected set of manifests from that list instead of counting to three.
 So one flag publishes a board, and leaving it off never breaks the others.
 The FNK0104S is known and not published: its row is `False` until the bench
@@ -119,7 +122,7 @@ that only the other boards could show:
   failed on the bowl, 6 on the watch. Every one was the test, none the game;
   they ask the layout now (the pages' `MSP_*` / `SHP_*` / `SET_*` / `UPD_*`
   numbers live in render.h / update.h for that), and `make check-all` and CI
-  run all of them in all three worlds.
+  run all of them in every board's world.
 - Still literal: the `--snapshot` mode's own taps (on the bowl its fry_modal
   picture opens another modal). A picture, not a check - repoint it when it
   is next touched.

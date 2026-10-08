@@ -608,7 +608,7 @@ Freenove FNK0104S, is built and waiting for the bench:
 | **Freenove FNK0104S**, 4.0" LCD (coming: bench testing; not in the installer) | 480×320 | `sdkconfig.lcd40` |
 
 Each board's touch panel is calibrated in its touch port, so a tap lands
-where the finger is. [docs/BOARDS.md](docs/BOARDS.md) has what the three
+where the finger is. [docs/BOARDS.md](docs/BOARDS.md) has what the boards
 share and where they differ; each board's own traps are in its doc. The
 browser installer above is the no-toolchain path; this is the developer one.
 
@@ -641,7 +641,7 @@ explains where every kilobyte goes. The boot log prints a per-stage frame
 profile and per-decision inference timings, so performance work is
 measurable without instruments.
 
-**Other boards.** This repo supports those three boards, to keep the project small
+**Other boards.** This repo supports the boards above, to keep the project small
 while it is young. Two community ports run the tank elsewhere. They are not
 built or tested here, and they may lag behind this repo:
 
