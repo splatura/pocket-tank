@@ -1217,6 +1217,20 @@ static int selftest_saves(void) {
         tank_init(&tank, 8); progression_wake(&tank, 0);
         if (!progression_setup_pending() || tank.n_fish != 2) { printf("FAIL: a save with another magic loaded\n"); return 1; }
     }
+    /* every cell of THIS world's glass survives a save and a reload (2026-10-08:
+     * the LCD40's 30 x 20 = 600 cells sit in the 644 the save keeps; every
+     * board writes and reads its own grid on its own flash, so the round trip
+     * on one board is the contract - the spec's R#3) */
+    {
+        tank_init(&tank, 8); progression_wake(&tank, 0);
+        for (int i = 0; i < ALGAE_CELLS; i++) tank.algae[i] = (uint8_t)(1 + i % 250);
+        if (!progression_save(&tank)) { printf("FAIL: the full-glass save did not write\n"); return 1; }
+        tank_init(&tank, 9); progression_wake(&tank, 0);
+        for (int i = 0; i < ALGAE_CELLS; i++)
+            if (tank.algae[i] != (uint8_t)(1 + i % 250)) { printf("FAIL: algae cell %d of %d read back %d\n", i, ALGAE_CELLS, tank.algae[i]); return 1; }
+        loads++;
+        printf("selftest-saves: all %d cells of this glass's film, saved and read back\n", ALGAE_CELLS);
+    }
     remove(getenv("POCKET_TANK_SAVE"));
     for (int k = 0; k < nf; k++) free(names[k]);
     printf("selftest-saves ok (%d fixtures, %d loads; a 447-byte save and a foreign magic start fresh; NVS %s/%s)\n", nf, loads, SAVE_NVS_NS, SAVE_NVS_KEY);

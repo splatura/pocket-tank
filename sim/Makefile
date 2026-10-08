@@ -16,6 +16,7 @@ SDL_LIBS   := $(shell sdl2-config --libs)
 # `make ROUND=1`: the round 466 px bowl (the Waveshare 1.75C's world) as
 # ./fishsim-round, built beside the rectangle's in build-round/.
 # `make WATCH=1`: the watch's 410 x 502 portrait tank (the Waveshare 2.06) as ./fishsim-watch
+# `make FNK=1`: the Freenove FNK0104S's 480 x 320 LCD as ./fishsim-lcd40
 ifdef ROUND
 BUILD   := build-round
 OUT     := fishsim-round
@@ -24,6 +25,10 @@ else ifdef WATCH
 BUILD   := build-watch
 OUT     := fishsim-watch
 ROUNDF  := -DTANK_WATCH
+else ifdef FNK
+BUILD   := build-lcd40
+OUT     := fishsim-lcd40
+ROUNDF  := -DTANK_LCD40
 else
 BUILD   := build
 OUT     := fishsim
@@ -61,6 +66,7 @@ check-all:
 	$(MAKE) check
 	$(MAKE) ROUND=1 check
 	$(MAKE) WATCH=1 check
+	$(MAKE) FNK=1 check
 
 check-nomodel:
 	$(MAKE) NOMODEL=1 check
@@ -78,7 +84,7 @@ $(BUILD)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -rf build build-round build-watch fishsim fishsim-round fishsim-watch
+	rm -rf build build-round build-watch build-lcd40 fishsim fishsim-round fishsim-watch fishsim-lcd40
 
 -include $(OBJS:.o=.d)
 

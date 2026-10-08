@@ -29,6 +29,11 @@
 #define TANK_W 410
 #define TANK_H 502
 #endif
+#ifdef TANK_LCD40               /* the Freenove FNK0104S (2026-10-08): a 4.0-inch ST7796S LCD, 480 x 320 landscape -
+                                 * 32 px wider and 48 px shorter than the 1.8 (docs/board-fnk0104s.md) */
+#define TANK_W 480
+#define TANK_H 320
+#endif
 /* a tank WORN on a wrist (2026-10-02): the picture's way up is the keeper's
  * setting (settings SCREEN), never the live IMU's - the arm swings through
  * every angle (tank_screen_*) */
@@ -156,6 +161,7 @@ typedef enum { VEG_KIND_GRASS, VEG_KIND_SWORD } veg_kind_t;
 #define ALGAE_ROWS (TANK_H / ALGAE_CELL)       /* 23 */
 #endif
 #define ALGAE_CELLS (ALGAE_COLS * ALGAE_ROWS)
+_Static_assert(ALGAE_COLS * ALGAE_ROWS <= 644, "the save keeps 644 film cells (progression.c SAVE LAYOUT LOCK): a bigger grid needs a new tail field");
 /* a frond segment's height. 3.2 px on the 1.8 puts a full frond's tip just
  * under the surface; the watch's portrait tank is 118 px taller, so its
  * segments are too (107 x 4.3 from y 486: the tip at 26) - growth is still
@@ -163,6 +169,8 @@ typedef enum { VEG_KIND_GRASS, VEG_KIND_SWORD } veg_kind_t;
  * 1.8's pitch on every build (VEG_PAY_PX): the same cut, the same sand dollars. */
 #ifdef TANK_WATCH
 #define VEG_SEG_PX 4.3f
+#elif defined(TANK_LCD40)       /* the 320 px glass: a full frond's tip just under the surface, as on the 1.8 (107 x 2.75 from y 304) */
+#define VEG_SEG_PX 2.75f
 #else
 #define VEG_SEG_PX 3.2f
 #endif
