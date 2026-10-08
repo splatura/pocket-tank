@@ -54,6 +54,15 @@ menu "pocket-tank"
         default n
         help
             Enable for the real board (docs/AUDIO.md). Off = stub audio port: cues compile, nothing plays.
+    config POCKET_TANK_QEMU
+        bool "Build for Espressif QEMU (run_qemu.sh): ports the emulator lacks become stand-ins"
+        default n
+        help
+            Set by sdkconfig.qemu. QEMU models the CPU, PSRAM and flash but not
+            the SAR ADC: esp_adc's start-up self-calibration (a constructor in
+            esp_adc/adc_common.c) waits on it forever, so the FNK0104S's ADC
+            battery port is replaced by battery_port_stub.c (no meter). Never set
+            for a board.
     config POCKET_TANK_NO_PIE
         bool "Disable the PIE SIMD inference kernel (scalar dot products)"
         default n

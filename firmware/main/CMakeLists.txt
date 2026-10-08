@@ -1,6 +1,8 @@
 set(SRCS main.c director.c brightness.c batlog.c codec_port.c advisor_llm_esp.c imu_port_qmi8658.c
          update_mode.c net_port_esp.c model_trailer.c)
-if(CONFIG_POCKET_TANK_LCD40)
+if(CONFIG_POCKET_TANK_LCD40 AND CONFIG_POCKET_TANK_QEMU)
+    list(APPEND SRCS battery_port_stub.c)     # QEMU has no SAR ADC (Kconfig POCKET_TANK_QEMU)
+elseif(CONFIG_POCKET_TANK_LCD40)
     list(APPEND SRCS battery_port_adc.c)
 else()
     list(APPEND SRCS battery_port_axp2101.c)

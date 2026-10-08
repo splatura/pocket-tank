@@ -1,14 +1,19 @@
-# Overlay for Espressif QEMU (esp32s3 machine): quad PSRAM, max 4 MB.
-# The real board is octal 8 MB (sdkconfig.defaults). Build with:
+# Overlay for Espressif QEMU (esp32s3 machine, esp_develop 9.2.2+): the real
+# memory layout (octal 8 MB PSRAM, 16 MB flash, the model partition), with the
+# ports the emulator cannot drive replaced by stand-ins. run_qemu.sh builds
+# with it on top of sdkconfig.defaults and the board's own fragment:
 #   idf.py -B build_qemu -DSDKCONFIG=build_qemu/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.qemu" build
-CONFIG_SPIRAM_MODE_OCT=n
-CONFIG_SPIRAM_MODE_QUAD=y
-CONFIG_SPIRAM_SPEED_40M=y
-CONFIG_SPIRAM_SPEED=40
+#   (the FNK0104S: "sdkconfig.defaults;sdkconfig.lcd40;sdkconfig.qemu")
+CONFIG_POCKET_TANK_QEMU=y
 
-# QEMU may not emulate PSRAM: keep booting without it (plan becomes a warning)
-CONFIG_SPIRAM_IGNORE_NOTFOUND=y
-# QEMU: no panel, no touch
+# no panel, no touch, no sound in the emulator: the stub ports
 CONFIG_POCKET_TANK_DISPLAY_SH8601=n
+CONFIG_POCKET_TANK_DISPLAY_ST7796=n
 CONFIG_POCKET_TANK_TOUCH_FT3168=n
 CONFIG_POCKET_TANK_AUDIO_ES8311=n
+
+# signed updates (0.3, docs/OTA.md): the emulated chip finds no signature on
+# the running app and aborts at start-up ("This app is not signed, but check
+# signature on update is enabled"). The emulator image is unsigned instead.
+CONFIG_SECURE_SIGNED_APPS_NO_SECURE_BOOT=n
+CONFIG_SECURE_SIGNED_ON_UPDATE_NO_SECURE_BOOT=n

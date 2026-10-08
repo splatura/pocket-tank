@@ -547,12 +547,18 @@ The ESP-IDF v5.4 app boots in Espressif's QEMU with the real hardware
 configuration (octal 8 MB PSRAM) and the model partition populated:
 
 ```bash
-cd firmware && ./run_qemu.sh
+cd firmware && ./run_qemu.sh          # the 1.8; or: round, watch, lcd40
 ```
 
 You'll watch an emulated ESP32-S3 memory-map the 7.56 MB model from flash
-and start making decisions, about 2.3 s each in emulation. The display and
-touch ports are stubs in the QEMU overlay; decisions go to the log.
+and start making decisions, about 1.2 s each in emulation. The script builds
+the board's image with `sdkconfig.qemu` on top: the display, touch and sound
+are stub ports, the image is unsigned (the emulated chip cannot check a
+signature), and the FNK0104S has no battery meter (QEMU has no ADC).
+Decisions go to the log. It needs the esp_develop 9.2.2 QEMU
+(`python ~/esp/esp-idf/tools/idf_tools.py install qemu-xtensa` with
+ESP-IDF 5.5), which needs the host's libslirp; the 9.0.0 QEMU that IDF 5.4.1
+ships cannot emulate the octal PSRAM.
 
 ## Install from your browser
 

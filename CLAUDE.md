@@ -40,7 +40,7 @@ cd firmware && idf.py build      # the 1.8 (default)
 idf.py -B build-round -DSDKCONFIG=build-round/sdkconfig "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.round" build
 idf.py -B build-watch -DSDKCONFIG=build-watch/sdkconfig "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.watch" build
 idf.py -B build-lcd40 -DSDKCONFIG=build-lcd40/sdkconfig "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.lcd40" build
-cd firmware && ./run_qemu.sh     # boots in QEMU with stub display/touch; decisions go to the log
+cd firmware && ./run_qemu.sh [round|watch|lcd40]   # builds + boots in QEMU 9.2.2 (sdkconfig.qemu: stub ports, unsigned); decisions go to the log
 ```
 
 ## Flashing a real device
