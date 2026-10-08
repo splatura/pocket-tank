@@ -2760,7 +2760,9 @@ void render_battery_info(uint16_t *fb, int stride, const bat_info_t *bi, float c
     char est[48];
     if (bi->state == BAT_CHARGING) { battery_fmt_dur(d, sizeof d, bi->left_min); snprintf(est, sizeof est, "FULL IN ABOUT %s", d); }
     else if (bi->state == BAT_FULL) snprintf(est, sizeof est, "READY TO UNPLUG");
-    else if (bi->state == BAT_PLUGGED) snprintf(est, sizeof est, "NOT CHARGING RIGHT NOW");
+    /* an estimating board knows only that a USB host is there, never
+     * whether the cell is charging: it says no more than that (2026-10-08) */
+    else if (bi->state == BAT_PLUGGED) snprintf(est, sizeof est, BAT_ESTIMATED ? "ON USB POWER" : "NOT CHARGING RIGHT NOW");
     else if (bi->left_min < 5) snprintf(est, sizeof est, "ALMOST EMPTY");
     else { battery_fmt_dur(d, sizeof d, bi->left_min); snprintf(est, sizeof est, "ABOUT %s LEFT", d); }
     draw_text(&c, X + (W - text_w(est, 2)) / 2, Y + 110, 2, 0x9fd8e2, est);

@@ -1922,7 +1922,7 @@ static float update_clock;
  * hand); the window then shows the glass as that wearer sees it - upside down
  * until settings SCREEN is TURNED - and the mouse lands where their finger would. */
 static bool sim_worn_turned = false;
-static bool sim_view_turned(void) { return (!update_mode && tank_screen_turned(&tank)) != sim_worn_turned; }   /* update mode: no tank, no turn (the device's) */
+static bool sim_view_turned(void) { return tank_screen_turned(&tank) != sim_worn_turned; }   /* update mode too: the device turns its update pages from the saved SCREEN */
 static void sim_flip_canvas(void);
 static bool s_canvas_flipped;
 static bool ms_back = false;         /* the settings page's CLOSE just brought the milestones page back (2026-09-16,
@@ -2070,6 +2070,7 @@ static void frame_cb(lv_timer_t *timer) {
             printf("update mode: %s (radio %s)\n", o == UPD_RESTART ? "installed - the device would restart into the new image now" : "back to the tank", net_sim_radio_on() ? "ON?!" : "off");
             if (o == UPD_RESTART) notice_updated();   /* what the first boot of the new release shows */
         }
+        if (sim_view_turned()) sim_flip_canvas();     /* the update pages turn as the tank does (the device's, 2026-10-08) */
         lv_obj_invalidate(canvas);
         return;
     }
@@ -2565,7 +2566,7 @@ static int snapshot(const char *prefix, int seconds) {
       tank.light_manual_off = mo; tank.light_auto = la; tank.night = ni; }
     /* the battery (2026-09-24): the pill with a card in each state (clock
        0.65 = the charging sweep mid-fill), then the page on battery, charging,
-       full - its numbers from a staged history */
+       full, plugged - its numbers from a staged history */
     { static const struct { const char *name; float frac; int state; } PILL[] = {
           { "on_battery", 0.63f, BAT_ON_BATTERY }, { "charging", 0.63f, BAT_CHARGING }, { "full", 1.0f, BAT_FULL },
           { "plugged", 0.82f, BAT_PLUGGED }, { "low", 0.08f, BAT_ON_BATTERY }, { "low_charging", 0.08f, BAT_CHARGING } };
@@ -2589,7 +2590,10 @@ static int snapshot(const char *prefix, int seconds) {
       b.h.since_unix = now - (2 * 3600 + 40 * 60);
       battery_info(&b, now, 100, 4180, BAT_FULL, &bi);
       render_tank(&tank, fb, TANK_W); render_battery_info(fb, TANK_W, &bi, 0.65f);
-      snprintf(path, sizeof path, "%s_battery_page_full.ppm", prefix); write_ppm(path, fb); }
+      snprintf(path, sizeof path, "%s_battery_page_full.ppm", prefix); write_ppm(path, fb);
+      battery_info(&b, now, 82, 3980, BAT_PLUGGED, &bi);   /* on a cable, the charge unknown (the FNK0104S: ON USB POWER, 2026-10-08) */
+      render_tank(&tank, fb, TANK_W); render_battery_info(fb, TANK_W, &bi, 0.65f);
+      snprintf(path, sizeof path, "%s_battery_page_plugged.ppm", prefix); write_ppm(path, fb); }
     render_tank(&tank, fb, TANK_W); render_confirm_reset(fb, TANK_W, 0.7f);
     snprintf(path, sizeof path, "%s_confirm.ppm", prefix); write_ppm(path, fb);
     /* the first-run setup, page by page (never BEGIN: that would save this
