@@ -22,3 +22,6 @@ endif()
 if(CONFIG_POCKET_TANK_WATCH)   # the watch's 410 x 502 portrait tank
     target_compile_definitions(${COMPONENT_LIB} PUBLIC TANK_WATCH)
 endif()
+if(CONFIG_POCKET_TANK_LCD40)   # the FNK0104S's 480 x 320 LCD (docs/board-fnk0104s.md)
+    target_compile_definitions(${COMPONENT_LIB} PUBLIC TANK_LCD40)
+endif()

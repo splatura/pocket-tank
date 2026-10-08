@@ -23,7 +23,15 @@
  * RTC chip unlike it: no expander + ES7210 + RTC = the watch. DSI_PWR_EN is
  * not a GPIO: it is pulled up to ALDO2, so that rail IS the panel's power
  * switch. PWR key sense on GPIO 10 (SYS_OUT), an SD slot (1/2/3/17) and a
- * vibration motor (GPIO 18, fed from ALDO3) the tank does not use. */
+ * vibration motor (GPIO 18, fed from ALDO3) the tank does not use.
+ *
+ * Freenove FNK0104S (2026-10-08; a 4.0in 480x320 ST7796S SPI LCD + FT6336
+ * touch on an ESP32-S3, QDtech ES3C40P). Sources: Freenove's FNK0104S
+ * tutorial and schematic (docs/board-fnk0104s.md, "The board"). No PMIC and no
+ * fuel gauge: the battery is read through a divider on an ADC pin. An ES8311
+ * codec on I2S behind an FM8002E amp (enable LOW = on), an unused mic. The
+ * panel's SPI is its own (CS 10, MOSI 11, SCLK 12, DC 46); the I2C bus
+ * (SDA 16, SCL 15) carries the touch and the IMU. */
 #ifndef BOARD_PINS_H
 #define BOARD_PINS_H
 #define PIN_LCD_CS        12
@@ -68,4 +76,26 @@
 #define W_PANEL_W         410      /* native portrait */
 #define W_PANEL_H         502
 #define W_PANEL_X_GAP     0x16
+
+/* ---- the FNK0104S (Freenove 4.0in, QDtech ES3C40P; 2026-10-08) ---- */
+#define F_PIN_LCD_CS      10
+#define F_PIN_LCD_MOSI    11
+#define F_PIN_LCD_SCLK    12
+#define F_PIN_LCD_DC      46       /* a boot strap: the vendor's pull sets download-mode levels (docs/board-fnk0104s.md) */
+#define F_PIN_LCD_BL      45       /* PWM, high = on; the VDD_SPI strap at reset */
+#define F_PIN_I2C_SDA     16
+#define F_PIN_I2C_SCL     15
+#define F_PIN_TP_RST      18
+#define F_PIN_TP_INT      17       /* unused: polled, as the watch's FT3168 */
+#define F_PIN_I2S_MCLK    4
+#define F_PIN_I2S_BCLK    5
+#define F_PIN_I2S_WS      7
+#define F_PIN_I2S_DOUT    8
+#define F_PIN_I2S_DIN     6        /* the mic: unused */
+#define F_PIN_AMP_EN      1        /* FM8002E: LOW = on */
+#define F_PIN_BAT_ADC     9        /* ADC1_CH8, through R14 = R15 = 100 k */
+#define F_BAT_DIVIDER     2.0f     /* measured on the bench before release: docs/board-fnk0104s.md */
+#define F_PANEL_W         320      /* native portrait; MADCTL MV turns it to 480 x 320 */
+#define F_PANEL_H         480
+#define I2C_ADDR_FT6336   0x38
 #endif

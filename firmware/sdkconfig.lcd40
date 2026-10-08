@@ -1,0 +1,8 @@
+# the FNK0104S build (Freenove 4.0in ST7796S, docs/board-fnk0104s.md): on top of sdkconfig.defaults
+#   idf.py -B <dir> -DSDKCONFIG=<dir>/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.lcd40" build
+CONFIG_POCKET_TANK_LCD40=y
+CONFIG_POCKET_TANK_DISPLAY_SH8601=n
+# until Tasks 8-12 give this board its own touch and audio ports: the stubs (the
+# 1.8's FT3168 and ES8311 ports reach for the SH8601 port's I2C bus)
+CONFIG_POCKET_TANK_TOUCH_FT3168=n
+CONFIG_POCKET_TANK_AUDIO_ES8311=n
