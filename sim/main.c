@@ -1626,19 +1626,31 @@ static int selftest_tend(void) {
      * the same stroke heading AWAY cuts nothing; and a stroke that starts ON
      * a tall frond keeps the precise reach (no running on into the wall). */
     {
+        /* in the bed's own pitch and the frond's own height, not the 1.8's
+           pixels: the outer frond stands 24 px from the glass there, 29 on the
+           LCD40 (beds scale with the floor, the pitch does not), so a lift
+           19..22 px short of the spine is 48..51 px from the LCD40's glass -
+           outside the band where a finger meets the bezel. The lift is a
+           pitch and a quarter short: past the pad's reach, inside that band. */
         int n; tank_veg_bed(&tank, 1, NULL, NULL, NULL, &n);
-        float fl; tank_veg_frond(&tank, 1, n - 1, &fl);
-        float want = veg_height_at(200.0f);
+        float fl, fl2; tank_veg_frond(&tank, 1, n - 1, &fl); tank_veg_frond(&tank, 1, n - 2, &fl2);
+        const float pitch = fl - fl2, step = pitch / 3;
+        const float sy = VEG_FLOOR_Y - 0.5f * (VEG_SEGS_FULL - 1) * VEG_SEG_PX * 0.90f;   /* the wall frond's mid-height */
+        const float lift = fl - 1.25f * pitch;
+        float want = veg_height_at(sy);
         tank_veg_set(&tank, 1, 0.11f); tank.veg_h[1][n - 1] = 0.90f; tank_veg_sync(&tank);
-        for (float sx = fl - 30; sx >= fl - 70; sx -= 4) tank_touch_drag(&tank, sx, 200.0f);     /* away from the wall */
+        for (float sx = fl - 2.5f * pitch; sx >= fl - 6 * pitch; sx -= step) tank_touch_drag(&tank, sx, sy);   /* away from the wall */
         tank_tick(&tank, 1.0f / 60.0f, advisor_rules); tank_tick(&tank, 1.0f / 60.0f, advisor_rules);
         if (tank.veg_h[1][n - 1] < 0.90f) { printf("FAIL: a stroke heading away from the wall cut the wall frond\n"); return 1; }
-        for (float sx = fl - 70; sx <= fl - 19; sx += 4) tank_touch_drag(&tank, sx, 200.0f);     /* to the wall, lifting 19+ px short of the spine */
+        for (float sx = fl - 6 * pitch; sx < lift; sx += step) tank_touch_drag(&tank, sx, sy);   /* to the wall from open water... */
+        tank_touch_drag(&tank, lift, sy);                                                          /* ...lifting short of the spine */
         tank_tick(&tank, 1.0f / 60.0f, advisor_rules); tank_tick(&tank, 1.0f / 60.0f, advisor_rules);
-        printf("selftest-tend: the lone wall frond (spine %.0f), a stroke from open water lifting 19 px short: 0.90 -> %.2f (want %.2f)\n", fl, tank.veg_h[1][n - 1], want);
+        printf("selftest-tend: the lone wall frond (spine %.0f, glass %d), a stroke from open water lifting %.0f px short at y %.0f: 0.90 -> %.2f (want %.2f)\n",
+               fl, TANK_FX1, fl - lift, sy, tank.veg_h[1][n - 1], want);
         if (fabsf(tank.veg_h[1][n - 1] - want) > 0.02f) { printf("FAIL: the lone wall frond stood\n"); return 1; }
         tank_veg_set(&tank, 1, 1.0f);
-        for (float sx = fl - 48; sx <= fl - 19; sx += 4) tank_touch_drag(&tank, sx, 200.0f);     /* begun ON the bed's fronds */
+        for (float sx = fl - 4 * pitch; sx < lift; sx += step) tank_touch_drag(&tank, sx, sy);    /* begun ON the bed's fronds */
+        tank_touch_drag(&tank, lift, sy);
         tank_tick(&tank, 1.0f / 60.0f, advisor_rules); tank_tick(&tank, 1.0f / 60.0f, advisor_rules);
         if (tank.veg_h[1][n - 1] < 1.0f) { printf("FAIL: a stroke begun on a frond ran on into the wall\n"); return 1; }
         tank_veg_set(&tank, 1, 1.0f);
@@ -3022,7 +3034,7 @@ static int selftest_shop(void) {
         float h13 = tank.veg_h[1][3];
         printf("selftest-shop: urchin: from x %.0f to the tall frond at %.0f (now x %.0f): 0.80 -> %.3f, %.0f px eaten; the sword plant %.3f -> %.3f\n",
                ux0, tf0, tank.urchin_x, h13, tank.urchin_grazed_px, sword0, tank.veg_h[3][1]);
-        if (h13 > 0.78f || h13 < 0.74f) { printf("FAIL: the urchin did not eat a bite of the tallest frond\n"); return 1; }
+        if (h13 > 0.80f - URCHIN_BITE * 0.25f || h13 < 0.80f - URCHIN_BITE * 1.25f) {   /* a bite, plus what its appetite grew on the walk */ printf("FAIL: the urchin did not eat a bite of the tallest frond\n"); return 1; }
         if (tank.veg_h[3][1] < sword0 - 1e-4f) { printf("FAIL: the urchin ate the sword plant\n"); return 1; }
         if (tank.trims != trims0 || tank.trim_px != tpx0) { printf("FAIL: the urchin's grazing counted as the keeper's trimming\n"); return 1; }
         if (tank.urchin_grazed_px < 10) { printf("FAIL: the urchin's tally %.0f px\n", tank.urchin_grazed_px); return 1; }

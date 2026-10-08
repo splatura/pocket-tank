@@ -949,6 +949,7 @@ bool  tank_snail_hit(const tank_t *t, float x, float y);
  * URCHIN_FLOOR_Y, its base on the root line. */
 #define URCHIN_FLOOR_Y (TANK_BOT - 21.0f)
 #define URCHIN_KEEP     0.40f      /* it never takes a frond below this (a fresh tank's cover is 0.35) */
+#define URCHIN_BITE     0.05f      /* one sitting: ~17 px off a frond on the 1.8 */
 void  tank_urchin_place(tank_t *t);
 bool  tank_urchin_hit(const tank_t *t, float x, float y);
 bool  tank_urchin_chewing(const tank_t *t);   /* at a frond's foot, eating (render: the spines work) */

@@ -1002,7 +1002,6 @@ void tank_snail_place(tank_t *t) {
 #define URCHIN_SLEEP_FRAC_H  0.20f    /* of the height over the keep line, an hour asleep (tuned in
                                        * selftest-sleep: a 7 h night from a trimmed 0.35 lands ~0.6
                                        * where it lands 0.70 alone; days away settle ~0.65, not 0.83) */
-#define URCHIN_BITE          0.05f    /* one sitting: ~17 px off a frond on the 1.8 */
 #define URCHIN_CHEW_S        14.0f
 #define URCHIN_TAP_RADIUS    40.0f    /* a fingertip round a ~32 px urchin */
 #define URCHIN_HALF_W        16.0f
