@@ -124,11 +124,20 @@ void render_set_card_cache(uint16_t *buf);
  * lighter fill - brightness, not hue). render_tools_hit(x, y) is the tap
  * test while a fish's card is up: TOOL_SPONGE / TOOL_SCISSORS, or -1 (the
  * box's half, from its top edge down to the bezel, plus side slop). */
+#ifdef TANK_LCD40                    /* the 320 px glass: card (258) + gap + box (70) is taller than the frame - the box
+                                        stands BESIDE the card, its foot on the card's foot (2026-10-08, spec R#4) */
+#define RENDER_TOOLS_BESIDE 1
+#define RENDER_TOOLS_X (RENDER_CARD_X + RENDER_CARD_W + RENDER_TOOLS_GAP)
+#define RENDER_TOOLS_Y (RENDER_CARD_Y + RENDER_CARD_H - RENDER_TOOLS_H)
+#define RENDER_TOOLS_HIT_Y1 (RENDER_TOOLS_Y + RENDER_TOOLS_H + 12)
+#else
+#define RENDER_TOOLS_BESIDE 0
 #define RENDER_TOOLS_X RENDER_CARD_X
 #define RENDER_TOOLS_Y (RENDER_CARD_Y + RENDER_CARD_H + RENDER_TOOLS_GAP)
+#define RENDER_TOOLS_HIT_Y1 TANK_H   /* the toolbox's tap test runs down to here (the bezel, where the box is the glass's foot) */
+#endif
 #define RENDER_TOOLS_W RENDER_CARD_W
 #define RENDER_TOOLS_H 70
-#define RENDER_TOOLS_HIT_Y1 TANK_H   /* the toolbox's tap test runs down to here (the bezel, where the box is the glass's foot) */
 int  render_tools_hit(float x, float y);
 /* With a tool in hand and no fish card up, a chip at the top left says so:
  * the tool and DONE. A tap on it (render_tool_chip_hit) puts the tool back
@@ -353,6 +362,15 @@ void render_fish_portrait(uint16_t *fb, int stride, float x, float y, float size
 #define MSP_ROW_STRIP 27                /* ... the growth strip / the fry's ticks ... */
 #define MSP_ROW_BADGE 1                 /* ... the badges' top ... */
 #define MSP_ROW_BAR   33                /* ... the bar under a gate still owed */
+#elif defined(TANK_LCD40)              /* the 320 px glass shows page y 24..344: rows start at the cut, 37 px apart -
+                                          six rows end at 246, above the TANK row's divider at 250 */
+#define MSP_ROW_Y0    24
+#define MSP_ROW_H     37
+#define MSP_TANK_Y    254
+#define MSP_ROW_MID   18
+#define MSP_ROW_STRIP 28
+#define MSP_ROW_BADGE 2
+#define MSP_ROW_BAR   35
 #else
 #define MSP_ROW_Y0    4
 #define MSP_ROW_H     40
@@ -425,7 +443,11 @@ void render_fish_portrait(uint16_t *fb, int stride, float x, float y, float size
 #define SHP_HEAD_X    112
 #define SHP_EARN_X    32
 #endif
+#ifdef TANK_LCD40
+#define SHP_COIN_Y    24                /* the coin's top on the glass's first row (it was 10: the header lost its top) */
+#else
 #define SHP_COIN_Y    10
+#endif
 #define SHP_ROW_Y0    98
 #define SHP_ROW_DY    56
 #define SHP_ROW_ICON  32
@@ -465,7 +487,11 @@ void render_fish_portrait(uint16_t *fb, int stride, float x, float y, float size
 #define SET_NOTE5_Y   286            /* under it: who it is for */
 #define SET_FOOT_Y    392            /* UPDATES and CLOSE */
 #else
+#ifdef TANK_LCD40
+#define SET_TITLE_Y   26             /* under the 24 px the 320 px glass cuts from the page's top */
+#else
 #define SET_TITLE_Y   14
+#endif
 #define SET_ROW1_Y    58             /* BRIGHTNESS */
 #define SET_ROW2_Y    108            /* VOLUME */
 #define SET_NOTE_Y    146            /* "FISH ARE QUIET AT NIGHT" */

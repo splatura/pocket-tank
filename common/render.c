@@ -2497,7 +2497,8 @@ static void tools_draw(ctx_t *c, const tank_t *t) {
 }
 int render_tools_hit(float x, float y) {
     const int X = RENDER_TOOLS_X, W = RENDER_TOOLS_W;
-    if (y < RENDER_TOOLS_Y || y >= RENDER_TOOLS_HIT_Y1 || x < X - RENDER_CARD_HIT_SIDE || x >= X + W + RENDER_CARD_HIT_SIDE) return -1;
+    if (y < RENDER_TOOLS_Y - (RENDER_TOOLS_BESIDE ? 12 : 0) || y >= RENDER_TOOLS_HIT_Y1 ||
+        x < X - RENDER_CARD_HIT_SIDE || x >= X + W + RENDER_CARD_HIT_SIDE) return -1;
     return x < X + W / 2 ? TOOL_SPONGE : TOOL_SCISSORS;
 }
 
@@ -3653,7 +3654,8 @@ void render_settings(const tank_t *t, uint16_t *fb, int stride, int bright_pct, 
 #if TANK_WORN                                    /* the watch: centred under the foot, between the lower corners */
     draw_text_8px(&c, (PAGE_W - ((int)strlen(ver) * 6 - 1)) / 2, SET_FOOT_Y + MSP_CLOSE_H + 2, MSP_DIM, ver);
 #else
-    draw_text_8px(&c, SET_LABEL_X + (PAGE_BOWL ? 96 : 0), PAGE_H - 8 - 6, MSP_DIM, ver);
+    if (PAGE_Y + PAGE_H - 8 - 6 + 8 <= TANK_H)  /* on the glass (the 320 px LCD has no room under the foot: UPDATES shows it) */
+        draw_text_8px(&c, SET_LABEL_X + (PAGE_BOWL ? 96 : 0), PAGE_H - 8 - 6, MSP_DIM, ver);
 #endif
     button(&c, SET_CLOSE_X, SET_FOOT_Y, MSP_CLOSE_W, MSP_CLOSE_H, 0x1c2f36, MSP_TEAL, "CLOSE", 2);
     /* UPDATES (2026-09-30, docs/OTA.md): bottom left, the same size as CLOSE */

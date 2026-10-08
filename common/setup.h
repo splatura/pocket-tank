@@ -136,9 +136,14 @@ enum { SETUP_PG_RENAME = SETUP_PG_PLACE + 1 };
  * bezel curve (x 32..416, y 16..342); the name page draws straight on the
  * tank. */
 #define SETUP_X 32
+#ifdef TANK_LCD40
+#define SETUP_Y 24                       /* the panel inside the 320 px glass's view of the page (y 24..344) */
+#define SETUP_H 318
+#else
 #define SETUP_Y 16
-#define SETUP_W 384
 #define SETUP_H 326
+#endif
+#define SETUP_W 384
 #define SETUP_BTN_W 110
 #define SETUP_BTN_H 42
 #define SETUP_BTN_Y (SETUP_Y + SETUP_H - 12 - SETUP_BTN_H)   /* welcome / care: the foot */

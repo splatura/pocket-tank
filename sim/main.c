@@ -1698,7 +1698,8 @@ static int selftest_tend(void) {
         if (tank.tool != TOOL_HAND) { printf("FAIL: the scissors stayed in hand after %.0f s untouched\n", TOOL_IDLE_S); return 1; }
         const int by = RENDER_TOOLS_Y + RENDER_TOOLS_H / 2;
         if (render_tools_hit(RENDER_TOOLS_X + 20, by) != TOOL_SPONGE || render_tools_hit(RENDER_TOOLS_X + RENDER_TOOLS_W - 20, by) != TOOL_SCISSORS ||
-            render_tools_hit(RENDER_TOOLS_X + 20, RENDER_CARD_Y + RENDER_CARD_H - 4) >= 0 || !RENDER_CARD_HIT(RENDER_TOOLS_X + 20, RENDER_TOOLS_Y - 2)) {
+            render_tools_hit(RENDER_CARD_X + 20, RENDER_CARD_Y + RENDER_CARD_H - 4) >= 0 ||
+            (!RENDER_TOOLS_BESIDE && !RENDER_CARD_HIT(RENDER_TOOLS_X + 20, RENDER_TOOLS_Y - 2))) {
             printf("FAIL: the toolbox's tap test\n"); return 1; }
         for (int i = 0; i < ALGAE_CELLS; i++) tank.algae[i] = 0;
         tank_veg_set(&tank, 1, 1.0f);
@@ -4132,8 +4133,8 @@ static int selftest_bounds(void) {
         { "update subtitle",         0, UPD_SUB_Y, PAGE_W, 14, true, true },
         { "update panel",            UPD_PANEL_X, UPD_PANEL_Y, UPD_PANEL_W, UPD_PANEL_H, true, false },
         { "update CHECK",            UPD_CHECK_X, UPD_CHECK_Y, UPD_CHECK_W, UPD_CHECK_H, true, false },
-        { "update foot buttons",     UPD_BTN_L_X, UPD_BTN_Y, UPD_BTN_R_X + UPD_BTN_W - UPD_BTN_L_X, UPD_BTN_H, true },
-        { "update CLOSE",            UPD_CLOSE_X, UPD_CLOSE_Y, UPD_CLOSE_W, UPD_CLOSE_H, true },
+        { "update foot buttons",     UPD_BTN_L_X, UPD_BTN_Y, UPD_BTN_R_X + UPD_BTN_W - UPD_BTN_L_X, UPD_BTN_H, true, false },
+        { "update CLOSE",            UPD_CLOSE_X, UPD_CLOSE_Y, UPD_CLOSE_W, UPD_CLOSE_H, true, false },
     };
     int fails = 0;
     for (size_t i = 0; i < sizeof R / sizeof R[0]; i++) {

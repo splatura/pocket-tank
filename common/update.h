@@ -89,11 +89,18 @@ int  updates_page_touch(float x, float y, bool down);       /* every frame: UPD_
 /* the pages' layout (PAGE coordinates, render.h; 2026-10-01: out of update.c,
  * setup.h's way, so the sim's selftest taps where the layout says on every board) */
 #define UPD_PANEL_W   384                       /* the pages' panel: x 32..416 */
+#ifdef TANK_LCD40
+#define UPD_TITLE_Y   28
+#define UPD_SUB_Y     30
+#define UPD_PANEL_Y   24
+#define UPD_PANEL_H   318
+#else
 #define UPD_TITLE_Y   14                        /* a page's title, scale 3 ("UPDATES") */
 #define UPD_SUB_Y     22                        /* a page's caption line, scale 2 ("CHOOSE YOUR NETWORK", "PASSWORD FOR") */
-#define UPD_PANEL_X   32                        /* the pages' panel (update.c's UX / UY / UH) */
 #define UPD_PANEL_Y   16
 #define UPD_PANEL_H   326
+#endif
+#define UPD_PANEL_X   32                        /* the pages' panel (update.c's UX / UY / UH) */
 #define UPD_CHECK_X   32
 #define UPD_CHECK_Y   206
 #define UPD_CHECK_W   384

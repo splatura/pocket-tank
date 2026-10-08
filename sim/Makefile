@@ -49,7 +49,7 @@ $(OUT): $(OBJS)
 
 SELFTESTS := --selftest --selftest-hunger --selftest-shop --selftest-battery \
              --selftest-pop --selftest-card --selftest-sleep --selftest-tend --selftest-llm \
-             --selftest-saves --selftest-update
+             --selftest-saves --selftest-update --selftest-bounds
 # the dev repo does not track model/out (the public one does): NOMODEL=1 runs
 # the same checks without the LLM selftest, for a checkout with no model
 ifdef NOMODEL
