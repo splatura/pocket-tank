@@ -20,7 +20,7 @@ jobs:
           git clone --depth 1 --branch v9.2.2 https://github.com/lvgl/lvgl.git sim/lvgl
       - name: Build and test the simulator
         run: |
-          # all three boards' worlds (docs/BOARDS.md): the rectangle, the bowl, the watch.
+          # every board's world (docs/BOARDS.md): the rectangle, the bowl, the watch, the FNK0104S's LCD.
           # the dev repo does not track model/out; the public one does (the LLM selftest needs it)
           if [ -f model/out/model_q4.bin ]; then make -C sim -j"$(nproc)" check-all
           else echo "no model in this checkout: the LLM selftest is skipped"; make -C sim -j"$(nproc)" NOMODEL=1 check-all; fi
@@ -40,3 +40,25 @@ jobs:
             "zone 2 hunger 7 energy 5 stress 2 curiosity 8 bold 4 social 6 stage adult trust 6 bored 3 food near 12 friend mid 3 bubble mid 10 reef far 7 wall clear last explore time day ->"
       - name: Check Python syntax
         run: python3 -m compileall -q tools model
+      - name: Test the board lists (tools/pt_boards.py)
+        run: python3 tools/test_pt_boards.py
+
+  # Every KNOWN board's firmware compiles under the ESP-IDF the releases use,
+  # published or not (tools/pt_boards.py --known-builds): an unpublished board
+  # is never built by release.yml / installer.yml, so this is its only gate.
+  # A compile check only: a throwaway signing key, nothing uploaded.
+  firmware-compile:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Throwaway signing key (this image is never published)
+        run: |
+          mkdir -p firmware/keys
+          openssl genrsa -out firmware/keys/ota_signing_key.pem 3072 2> /dev/null
+      - name: Build the firmware - every known board (tools/pt_boards.py)
+        uses: espressif/esp-idf-ci-action@v1
+        with:
+          esp_idf_version: v5.4.1
+          target: esp32s3
+          path: firmware
+          command: bash ../tools/ci_build.sh --known

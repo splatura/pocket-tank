@@ -20,8 +20,20 @@ BOARDS = [
     ("watch206",  "Waveshare ESP32-S3-Touch-AMOLED-2.06",  "sdkconfig.watch", "build-watch", True),
     ("fnk0104s",  "Freenove FNK0104S",                     "sdkconfig.lcd40", "build-lcd40", False),
 ]
+
+
+def published_rows(rows):
+    """the rows a release and the installer carry"""
+    return [b for b in rows if b[4]]
+
+
+def build_lines(rows):
+    """("<build dir>", "<sdkconfig fragment or ->") per row, for tools/ci_build.sh"""
+    return [(b[3], b[2] or "-") for b in rows]
+
+
 IDS = [b[0] for b in BOARDS]
-PUBLISHED = [b[0] for b in BOARDS if b[4]]
+PUBLISHED = [b[0] for b in published_rows(BOARDS)]
 MAGIC = b"PTBOARD\0"
 MARKER_OFFSET = 0x120          # the image header (24) + the first segment's header (8) + esp_app_desc_t (256)
 
@@ -56,12 +68,13 @@ def name_of(board):
 
 if __name__ == "__main__":
     if sys.argv[1:] == ["--published-dirs"]:
-        for b in BOARDS:
-            if b[4]:
-                print(b[3])
+        for b in published_rows(BOARDS):
+            print(b[3])
     elif sys.argv[1:] == ["--published-builds"]:   # "<dir> <fragment or ->" per line, for tools/ci_build.sh
-        for b in BOARDS:
-            if b[4]:
-                print(b[3], b[2] or "-")
+        for d, frag in build_lines(published_rows(BOARDS)):
+            print(d, frag)
+    elif sys.argv[1:] == ["--known-builds"]:       # the same, for every known board: CI compiles them all (published or not)
+        for d, frag in build_lines(BOARDS):
+            print(d, frag)
     else:
-        sys.exit("usage: pt_boards.py --published-dirs | --published-builds")
+        sys.exit("usage: pt_boards.py --published-dirs | --published-builds | --known-builds")
