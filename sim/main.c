@@ -1842,10 +1842,16 @@ static int selftest_tend(void) {
     tank.hold_active = false; tank_tick(&tank, 1.0f / 60.0f, advisor_rules);   /* end the hold */
     f->ms_bits &= ~MS_FIRST_HOLD_APPROACH; g->ms_bits &= ~MS_FIRST_HOLD_APPROACH;
     int holds_before = tank.hold_approaches;
-    f->trust = 10; f->hunger = 1; f->stress = 0; f->x = 200; f->y = 200;   /* the fast one, closer */
+    f->trust = 10; f->hunger = 1; f->stress = 0; f->x = 200; f->y = 200;   /* the fast one */
     f->heading = 3.14159f; tank_fish_face(f);   /* swimming AWAY until the draw: its wander must not
                                                   carry it inside HOLD_APPROACH_FROM first (2026-09-29) */
-    g->trust = 6;  g->hunger = 1; g->stress = 0; g->x = 120; g->y = 200; g->energy = 10;
+    /* the slow one comes in from the finger's other side, as far out. Lined
+       up behind the fast one (it started at x 120) its way in ran through the
+       fast one parked at the finger: personal space turned it round and it
+       hung 31..64 px out - credited in every tank only where the fast one
+       happened to settle right on the finger (on the LCD40 it settles 11..19
+       px short, on the slow one's side: 4 of 11 hold heights credited) */
+    g->trust = 6;  g->hunger = 1; g->stress = 0; g->x = 2 * hx - f->x; g->y = 200; g->energy = 10;
     g->goal.id = GOAL_EXPLORE; g->goal.urgency = 2;
     for (int step = 1; step <= 60 * 14; step++) {
         tank_touch_hold(&tank, hx, hy);
