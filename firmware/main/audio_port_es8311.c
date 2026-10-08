@@ -21,11 +21,21 @@
 
 static const char *TAG = "audio";
 
+#ifdef TANK_LCD40                    /* the FNK0104S (2026-10-08): its own I2S pins; an FM8002E enabled LOW on GPIO1 */
+#define PIN_I2S_MCLK  F_PIN_I2S_MCLK
+#define PIN_I2S_BCLK  F_PIN_I2S_BCLK
+#define PIN_I2S_WS    F_PIN_I2S_WS
+#define PIN_I2S_DOUT  F_PIN_I2S_DOUT
+#define PIN_AMP_EN    F_PIN_AMP_EN
+#define AMP_ON_LEVEL  0
+#else
 #define PIN_I2S_MCLK  16
 #define PIN_I2S_BCLK  (board_is_watch() ? W_PIN_I2S_BCLK : 9)
 #define PIN_I2S_WS    45
 #define PIN_I2S_DOUT  (board_is_watch() ? W_PIN_I2S_DOUT : 8)        /* ESP -> codec DSDIN */
 #define PIN_AMP_EN    46       /* NS4150B CTRL, 10k pulldown on the board */
+#define AMP_ON_LEVEL  1
+#endif
 #define BLOCK         160      /* 10 ms at 16 kHz */
 #define IDLE_US       (2 * 1000000LL)
 #define CODEC_RAIL    "aldo1"  /* A3V3: the codec's AVDD + the mic */
@@ -54,7 +64,7 @@ static int64_t s_idle_us = 5 * 1000000LL;
 
 static uint32_t now_ms(void) { return (uint32_t)(esp_timer_get_time() / 1000); }
 
-static void amp(bool on) { gpio_set_level(PIN_AMP_EN, on); }
+static void amp(bool on) { gpio_set_level(PIN_AMP_EN, on ? AMP_ON_LEVEL : !AMP_ON_LEVEL); }
 
 /* Deep sleep (2026-09-16, the night the tank died): the I2S lines and the
  * amp's CTRL are the ESP's outputs into ICs that stay powered on VCC3V3 all
@@ -77,7 +87,7 @@ void audio_port_deep_sleep_pins(void) {
         gpio_num_t p = QUIET_PINS[i];
         gpio_reset_pin(p);                        /* off the I2S matrix routing, a GPIO again */
         gpio_set_direction(p, GPIO_MODE_OUTPUT);
-        gpio_set_level(p, 0);
+        gpio_set_level(p, p == PIN_AMP_EN ? !AMP_ON_LEVEL : 0);
         gpio_hold_en(p);
     }
 }
@@ -165,7 +175,10 @@ bool audio_port_init(i2c_master_bus_handle_t bus) {
     size_t bank_bytes = (size_t)(_binary_sounds_bin_end - _binary_sounds_bin_start);
     if (bank_bytes != SND_BANK_BYTES) { ESP_LOGW(TAG, "bank is %u bytes, sounds.h says %u: rebuild (tools/make_sounds.py build) - silent", (unsigned)bank_bytes, (unsigned)SND_BANK_BYTES); return false; }
     if (!codec_port_present()) { ESP_LOGW(TAG, "no ES8311: silent"); return false; }
-    gpio_config_t io = { .pin_bit_mask = 1ULL << PIN_AMP_EN, .mode = GPIO_MODE_OUTPUT, .pull_down_en = GPIO_PULLDOWN_ENABLE };
+    gpio_set_level(PIN_AMP_EN, !AMP_ON_LEVEL);            /* the output latch first: the pin comes up OFF (the FNK0104S's is active low) */
+    gpio_config_t io = { .pin_bit_mask = 1ULL << PIN_AMP_EN, .mode = GPIO_MODE_OUTPUT,
+                         .pull_down_en = AMP_ON_LEVEL ? GPIO_PULLDOWN_ENABLE : GPIO_PULLDOWN_DISABLE,
+                         .pull_up_en = AMP_ON_LEVEL ? GPIO_PULLUP_DISABLE : GPIO_PULLUP_ENABLE };
     gpio_config(&io); amp(false);
     i2s_chan_config_t cc = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
     cc.dma_desc_num = 4; cc.dma_frame_num = BLOCK;

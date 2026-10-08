@@ -2,7 +2,4 @@
 #   idf.py -B <dir> -DSDKCONFIG=<dir>/sdkconfig -DSDKCONFIG_DEFAULTS="sdkconfig.defaults;sdkconfig.lcd40" build
 CONFIG_POCKET_TANK_LCD40=y
 CONFIG_POCKET_TANK_DISPLAY_SH8601=n
-# until Task 12 gives this board its own audio port: the stub (the 1.8's ES8311
-# port reaches for the SH8601 port's I2C bus)
-CONFIG_POCKET_TANK_AUDIO_ES8311=n
 CONFIG_POCKET_TANK_DISPLAY_ST7796=y
