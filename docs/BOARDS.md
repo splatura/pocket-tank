@@ -1,6 +1,7 @@
-# Three boards, one tank: how a change reaches all of them
+# Four boards, one tank: how a change reaches all of them
 
-Since 2026-10-01 the tank runs on three boards. This file is the rule for
+Since 2026-10-01 the tank runs on three boards, and since 2026-10-08 the
+code carries a fourth (the FNK0104S, not yet published). This file is the rule for
 changing anything they share - read it before a feature, the way DEVICE.md is
 read before a flash.
 
@@ -11,9 +12,10 @@ read before a flash.
 | Waveshare 1.8 AMOLED (the tank, the reference) | 448 x 368, round corners | default | `make` -> `fishsim` | `tools/flash.sh` (preflight; build dir `fw-build`) | port, `TANK_PORT=` with several on USB |
 | Waveshare 1.75C (the bowl) | 466 circle | `TANK_ROUND` | `make ROUND=1` -> `fishsim-round` | `tools/flash_round.sh` (`fw-build-175c`) | its USB serial (`ROUND_SERIAL`, tools/boards.local.sh) |
 | Waveshare 2.06 (the watch) | 410 x 502 portrait, 100 px corners | `TANK_WATCH` | `make WATCH=1` -> `fishsim-watch` | `tools/flash_watch.sh` (`fw-build-206`) | its USB serial (`WATCH_SERIAL`, tools/boards.local.sh) |
+| Freenove FNK0104S | 480 x 320 LCD | `TANK_LCD40` | `make FNK=1` -> `fishsim-lcd40` | `tools/flash_lcd40.sh` (`fw-build-lcd40`) | its USB serial (`LCD40_SERIAL`) |
 
 Each board's own traps are in its doc (board-amoled-1.75c.md,
-board-amoled-2.06-watch.md).
+board-amoled-2.06-watch.md, board-fnk0104s.md).
 
 ## What is shared, and where a board may differ
 
@@ -56,14 +58,14 @@ pixel instead of a name - fix that instead.
    test for one board.
 4. **A save field only ever appends** (progression.c's SAVE LAYOUT LOCK), and
    the save means the same on every board.
-5. **Nothing is done until all three say so:**
+5. **Nothing is done until every board says so:**
 
    | step | command (from the project root) | what it proves |
    |---|---|---|
-   | the checks | `make -C pocket-tank/sim check-all` | every selftest on all three worlds |
-   | the pictures | `pocket-tank/tools/board_sheet.py --selftest-card` (or `--snapshot 20`) | the same page on three glasses, side by side, cut to each glass |
-   | the firmware | `pocket-tank/tools/flash.sh` builds the 1.8; `flash_round.sh --build-only`, `flash_watch.sh --build-only` | it compiles for each board; compare `.bss` with the last flashed build (internal RAM is ~23 KB) |
-   | the glass | flash the 1.8 first (it is the reference and has the preflight), then the other two | Strato's finger |
+   | the checks | `make -C pocket-tank/sim check-all` | every selftest on every world |
+   | the pictures | `pocket-tank/tools/board_sheet.py --selftest-card` (or `--snapshot 20`) | the same page on every glass, side by side, cut to each glass |
+   | the firmware | `pocket-tank/tools/flash.sh` builds the 1.8; `flash_round.sh --build-only`, `flash_watch.sh --build-only`, `flash_lcd40.sh --build-only` | it compiles for each board; compare `.bss` with the last flashed build (internal RAM is ~23 KB) |
+   | the glass | flash the 1.8 first (it is the reference and has the preflight), then the others | Strato's finger |
 
    The handoff entry for a feature says where each board stands: checked /
    pictured / built / flashed / tried on the glass. "Not flashed" is a fine
@@ -89,6 +91,18 @@ live manifests, and the 0.3.0 changelog entry is a `"draft"`. The resync must
 carry `tools/pt_boards.py`. A cable install of the wrong board's image is not
 caught on the board (the page's picker is the guard); it boots blank and the
 right install puts it back, the save untouched.
+
+### Published, and known (2026-10-08)
+
+A board can be known to the tools before it ships. `tools/pt_boards.py` lists
+every board (`IDS`, so a stray image is still recognised) and carries a
+published flag per board (`PUBLISHED`). `tools/ci_build.sh` builds the
+published boards only, and `release.yml` and `installer.yml` take their builds
+and the expected set of manifests from that list instead of counting to three.
+So one flag publishes a board, and leaving it off never breaks the others.
+The FNK0104S is known and not published: its row is `False` until the bench
+acceptance in docs/board-fnk0104s.md passes. Its image carries the marker
+`fnk0104s`; `make_installer.py --include-unpublished` makes a local test page.
 
 ## What the first feature under these rules found (2026-10-01)
 

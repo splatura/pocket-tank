@@ -9,6 +9,13 @@ reset the chip before anyone read the log.
 
 ## Rules
 
+0. **The FNK0104S flashes with `tools/flash_lcd40.sh`, and that script runs no
+   preflight yet** (2026-10-08). A factory board runs Freenove's firmware,
+   which has no director, so `preflight.py` would refuse it, and the board
+   holds no tank anyone would miss. This changes the day a tank on it is
+   worth keeping, after its bench acceptance (docs/board-fnk0104s.md): the
+   script then gains the preflight, as `flash.sh` has it, and rule 1 covers it.
+
 1. **Flash only through `tools/flash.sh`** (`--model` for the model partition
    too). It runs `tools/preflight.py` first, which archives `batlog` + `state`
    to `docs/batlog/<date_time>.txt`, and refuses to flash without the archive.

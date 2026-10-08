@@ -70,6 +70,18 @@ partition (2.5 MB) has ~2 MB free. No compression needed. 16 kHz gives a
 GPIO46 is a strapping pin (ROM log control), sampled only at reset; the
 pulldown keeps the default, and driving it high at runtime is harmless.
 
+### The FNK0104S's amp (2026-10-08)
+
+The Freenove FNK0104S has the same ES8311 on its own I2S pins (MCLK 4, BCLK 5,
+WS 7, DOUT 8) and an FM8002E amp whose enable is **GPIO1, active LOW**: low is
+on, high is off (`AMP_ON_LEVEL` in audio_port_es8311.c; the other boards'
+amps are on high). The pin is driven off before it becomes an output, so the
+amp never comes up on. Rule 2 below still holds: `audio_port_deep_sleep_pins`
+holds the pin HIGH (off) through deep sleep, because a stuck amp is the one way
+this feature wrecks the battery. There is no PMIC, so the codec's analog-rail
+call does nothing here. docs/board-fnk0104s.md; the bench still has to
+listen for a pop when the amp switches.
+
 ## 3. Battery rules (the non-negotiables)
 
 Measured context: awake ~96 mA, drowse floor ~4.7 mA, cell ~120 mAh usable

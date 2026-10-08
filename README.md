@@ -500,7 +500,9 @@ cd sim && make && ./fishsim
 ```
 
 On macOS the Makefile targets x86_64 by default to match an Intel Homebrew
-SDL2; use `make ARCH=` for a native build. On Linux it builds for the host.
+SDL2; use `make ARCH=` for a native build. On Linux it builds for the host. The other worlds: `make ROUND=1`
+(`fishsim-round`), `make WATCH=1` (`fishsim-watch`) and `make FNK=1`
+(`fishsim-lcd40`, the Freenove FNK0104S's 480×320 glass).
 The trained model
 (`model/out/model_q4.bin` + `tokenizer.bin`) ships in the repo, so the LLM
 brain works out of the box.
@@ -595,13 +597,15 @@ vendored flasher). Any HTTPS static host will do, GitHub Pages included;
 ## Run it on real hardware
 
 Three Waveshare boards are supported, all ESP32-S3R8 with 16 MB flash and
-8 MB PSRAM, an AMOLED, capacitive touch, an IMU and a PMIC:
+8 MB PSRAM, an AMOLED, capacitive touch, an IMU and a PMIC, and a fourth, the
+Freenove FNK0104S, is built and waiting for the bench:
 
 | Board | Glass | Build |
 |---|---|---|
 | **ESP32-S3-Touch-AMOLED-1.8** (V1 and V2, auto-detected) | 368×448, shown as a 448×368 tank | the default |
 | **ESP32-S3-Touch-AMOLED-1.75C**, the pendant | 466 px circle | `sdkconfig.round` |
 | **ESP32-S3-Touch-AMOLED-2.06**, the watch | 410×502, portrait | `sdkconfig.watch` |
+| **Freenove FNK0104S**, 4.0" LCD (coming: bench testing; not in the installer) | 480×320 | `sdkconfig.lcd40` |
 
 Each board's touch panel is calibrated in its touch port, so a tap lands
 where the finger is. [docs/BOARDS.md](docs/BOARDS.md) has what the three
@@ -615,12 +619,13 @@ idf.py -p /dev/cu.usbmodem* flash
 esptool.py --chip esp32s3 -p /dev/cu.usbmodem* write_flash 0x290000 ../model/out/model_q4.bin
 ```
 
-The other two boards build from the same tree on top of their own fragment,
+The other boards build from the same tree on top of their own fragment,
 each in its own build directory:
 
 ```bash
 idf.py -B build-round -DSDKCONFIG=build-round/sdkconfig "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.round" build
 idf.py -B build-watch -DSDKCONFIG=build-watch/sdkconfig "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.watch" build
+idf.py -B build-lcd40 -DSDKCONFIG=build-lcd40/sdkconfig "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.lcd40" build
 ```
 
 Every build is signed, so the first build needs a key: `tools/ota_key.sh`
@@ -682,7 +687,7 @@ seven-minute prompt check before an overnight run is always worth it.
   tokenizer, the shared encoder)
 - `sim/` — the LVGL + SDL2 simulator, its persistence port, and the self-tests
 - `firmware/` — ESP-IDF app: display, touch, battery, IMU, RTC and audio
-  ports for the three Waveshare boards, the on-device advisor scheduler,
+  ports for the three Waveshare boards and the Freenove FNK0104S (four boards), the on-device advisor scheduler,
   update mode and its Wi-Fi port, the QEMU harness, and the partition table
 - `model/` — the frozen [state/goal schema](model/schema.md), trace
   generation, training, evaluation, probes, and the 4-bit export
@@ -707,9 +712,10 @@ seven-minute prompt check before an overnight run is always worth it.
 - [docs/retrain-v3.md](docs/retrain-v3.md) — the schema v3 retrain runbook
 - [docs/retrain-v4.md](docs/retrain-v4.md) — the schema v4 (boredom) retrain runbook and its numbers
 - [docs/DEVICE.md](docs/DEVICE.md) — what is in flight on the device, and the flash rule
-- [docs/BOARDS.md](docs/BOARDS.md) — the three boards: what is shared, where one may differ, how a release keeps each to its own image
+- [docs/BOARDS.md](docs/BOARDS.md) — the boards: what is shared, where one may differ, how a release keeps each to its own image
 - [docs/board-amoled-1.75c.md](docs/board-amoled-1.75c.md) — the pendant's bring-up notes
 - [docs/board-amoled-2.06-watch.md](docs/board-amoled-2.06-watch.md) — the watch's bring-up notes
+- [docs/board-fnk0104s.md](docs/board-fnk0104s.md) — the Freenove FNK0104S: pins, traps, bench results (coming: bench testing)
 - [docs/OTA.md](docs/OTA.md) — updates over Wi-Fi: the partition table, update mode, signing, the manifest
 - [docs/AUDIO.md](docs/AUDIO.md) — the sound design: the cues, the asset pipeline, the power rules
 - [docs/memory_budget.md](docs/memory_budget.md) — flash, PSRAM, and SRAM plan
