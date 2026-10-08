@@ -1,9 +1,9 @@
 # The over-the-air release (docs/OTA.md): on a version tag, build the firmware
-# for every board (docs/BOARDS.md) SIGNED with the project's key, make each
+# for every PUBLISHED board in tools/pt_boards.py (docs/BOARDS.md) SIGNED with the project's key, make each
 # board's OTA manifest, and attach the images and the manifests to the GitHub
 # Release for that tag. A tank fetches its own board's
 #   https://github.com/mediacutlet/pocket-tank/releases/latest/download/latest-<board>.json
-# (amoled18, round175c, watch206: common/version.h PT_BOARD)
+# (amoled18, round175c, watch206 today: common/version.h PT_BOARD)
 # so a release is live for every tank the moment it is published - and a
 # PRE-RELEASE is skipped by "latest": the private test channel (the
 # director's `ota url` points a tank at a pre-release's own asset URL).
@@ -39,37 +39,24 @@ jobs:
           test -n "$OTA_SIGNING_KEY" || { echo "no OTA_SIGNING_KEY secret"; exit 1; }
           mkdir -p firmware/keys
           printf '%s\n' "$OTA_SIGNING_KEY" > firmware/keys/ota_signing_key.pem
-      - name: Build (signed) - the 1.8
+      - name: Build (signed) - every published board (tools/pt_boards.py)
         uses: espressif/esp-idf-ci-action@v1
         with:
           esp_idf_version: v5.4.1
           target: esp32s3
           path: firmware
-      # the other boards (docs/BOARDS.md): the same tree on top of their
-      # sdkconfig fragment, each in its own build dir
-      - name: Build (signed) - the round board (1.75C)
-        uses: espressif/esp-idf-ci-action@v1
-        with:
-          esp_idf_version: v5.4.1
-          target: esp32s3
-          path: firmware
-          command: idf.py -B build-round -DSDKCONFIG=build-round/sdkconfig "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.round" build
-      - name: Build (signed) - the watch (2.06)
-        uses: espressif/esp-idf-ci-action@v1
-        with:
-          esp_idf_version: v5.4.1
-          target: esp32s3
-          path: firmware
-          command: idf.py -B build-watch -DSDKCONFIG=build-watch/sdkconfig "-DSDKCONFIG_DEFAULTS=sdkconfig.defaults;sdkconfig.watch" build
+          command: bash ../tools/ci_build.sh
       - name: OTA image + manifest
         run: |
           TAG="${GITHUB_REF_NAME}"
-          for B in firmware/build firmware/build-round firmware/build-watch; do   # the board comes from each image's marker
-            python3 tools/make_ota_manifest.py --build-dir "$B" \
+          for d in $(python3 tools/pt_boards.py --published-dirs); do   # the board comes from each image's marker
+            python3 tools/make_ota_manifest.py --build-dir "firmware/$d" \
               --base-url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}" --out ota
           done
           ls -la ota
-          test "$(ls ota/latest-*.json | wc -l)" -eq 3 || { echo "expected three board manifests"; exit 1; }
+          want=$(python3 -c "import sys; sys.path.insert(0,'tools'); import pt_boards; print(' '.join(sorted('latest-%s.json' % b for b in pt_boards.PUBLISHED)))")
+          got=$(cd ota && ls latest-*.json | sort | tr '\n' ' ' | sed 's/ $//')
+          [ "$got" = "$want" ] || { echo "manifests: got [$got], want [$want]"; exit 1; }
           rm -f firmware/keys/ota_signing_key.pem
       - name: Attach to the release
         env:

@@ -41,7 +41,7 @@ Web Serial needs a secure context: serve the folder over HTTPS (or from
 http://localhost for a local check: `python3 -m http.server -d installer/dist`)."""
 import argparse, datetime, hashlib, json, os, re, shutil, struct, subprocess, sys, tempfile
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from pt_boards import BOARDS, board_of_image, name_of, build_of_image
+from pt_boards import BOARDS, PUBLISHED, board_of_image, name_of, build_of_image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DEFAULT_BUILD = os.path.expanduser("~/.cache/pocket-tank/fw-build")
@@ -195,6 +195,7 @@ def main():
                          "for a page hosted somewhere else")
     ap.add_argument("--board-build", action="append", default=[],
                     help="another board's idf.py -B dir (repeat per board); its board comes from its image")
+    ap.add_argument("--include-unpublished", action="store_true", help="a local test page: unpublished boards too")
     a = ap.parse_args()
 
     def build_parts(build_dir):
@@ -238,6 +239,11 @@ def main():
     if "amoled18" not in builds:
         sys.exit("no 1.8 build: manifest.json (the name every install page points at) is the 1.8's")
     order = [b[0] for b in BOARDS if b[0] in builds]
+    if not a.include_unpublished:
+        dropped = [b for b in order if b not in PUBLISHED]
+        order = [b for b in order if b in PUBLISHED]
+        if dropped:
+            print(f"make_installer: leaving out unpublished {dropped} (--include-unpublished for a local page)")
 
     app18 = next(src for _, src, pub in builds["amoled18"] if pub == "pocket_tank.bin")
     version = a.version or release_version(build_of_image(app18))   # the page's line: the 1.8's

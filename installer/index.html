@@ -234,8 +234,8 @@
      manifest per board). With more than one, a picker comes first and points
      both buttons at the chosen board's manifests; the choice is remembered. */
   const BOARDS = {{BOARDS}};
-  const LABEL = { amoled18: '1.8 inch', round175c: '1.75 inch round', watch206: '2.06 inch watch' };
-  const NOTE = { amoled18: 'version V1 or V2. About $35 with the screen and a battery', round175c: 'the pendant: a round tank that fills the whole circle', watch206: 'the watch: a tall tank you can wear' };
+  const LABEL = { amoled18: '1.8 inch', round175c: '1.75 inch round', watch206: '2.06 inch watch', fnk0104s: '4.0 inch (Freenove)' };
+  const NOTE = { amoled18: 'version V1 or V2. About $35 with the screen and a battery', round175c: 'the pendant: a round tank that fills the whole circle', watch206: 'the watch: a tall tank you can wear', fnk0104s: 'the Freenove FNK0104S: a 4-inch LCD; the battery is an estimate from its voltage; BOOT puts it to sleep' };
   const installBtn = document.querySelector('esp-web-install-button:not(.fresh)');
   const freshBtn = document.querySelector('esp-web-install-button.fresh');
   /* The page may live on a different host than the firmware it installs (the
@@ -267,7 +267,7 @@
     }
     document.querySelector('[data-pick]').hidden = false;
     document.querySelector('[data-supported]').innerHTML = BOARDS.map(b =>
-      `<p><b>Waveshare ${b.name.replace(/^Waveshare /, '')}</b>, ${NOTE[b.id] || ''}.</p>`).join('');
+      `<p><b>${b.name}</b>, ${NOTE[b.id] || ''}.</p>`).join('');
     let saved = null; try { saved = localStorage.getItem('pt-board'); } catch (e) { }
     choose(saved || BOARDS[0].id);
   } else stamp();
