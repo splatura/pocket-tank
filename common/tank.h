@@ -42,6 +42,16 @@
 #else
 #define TANK_WORN 0
 #endif
+/* the picture's way up is the KEEPER's setting (settings SCREEN: NORMAL / TURNED),
+ * never a live sensor's: the watch (worn: the arm swings through every angle)
+ * and the FNK0104S (2026-10-08: no IMU at all). Saved in the tank save
+ * (screen_turned). TANK_WORN keeps its wrist-only meaning: the tall settings
+ * layout. */
+#if defined(TANK_WATCH) || defined(TANK_LCD40)
+#define TANK_SCREEN_MANUAL 1
+#else
+#define TANK_SCREEN_MANUAL 0
+#endif
 #ifndef TANK_W                  /* a build may override both (-DTANK_W=480 -DTANK_H=480: a square panel) */
 #define TANK_W 448
 #define TANK_H 368
@@ -373,7 +383,7 @@ typedef struct tank {
     bool     light_manual_off;     /* MANUAL: the keeper's last double-tap left it off (saved) */
     bool     light_tip_seen;       /* a double-tap has turned the light off once: its notice (notice.h
                                     * NOTICE_LIGHTS_OUT) came up then, and never again (saved) */
-    bool     screen_turned;        /* a worn tank (TANK_WORN): settings SCREEN = TURNED (saved) */
+    bool     screen_turned;        /* a keeper-turned tank (TANK_SCREEN_MANUAL): settings SCREEN = TURNED (saved) */
     bool     orient_lock;          /* settings ROTATION = locked (0.3.2, saved): the picture keeps the way up it
                                     * had when the keeper locked it, however the tank is turned (tank_orient) */
     bool     orient_inv;           /* the picture's way up now, true = turned over: the platform's live flip,
@@ -664,7 +674,8 @@ void  tank_handled(tank_t *t);
 void  tank_toggle_light(tank_t *t);
 void  tank_light_auto(tank_t *t);
 
-/* The picture's way up on a WORN tank (TANK_WORN, 2026-10-02). A watch can
+/* The picture's way up on a tank whose way up is the keeper's (TANK_SCREEN_MANUAL:
+ * the watch, the FNK0104S; the watch from 2026-10-02). A watch can
  * go on either wrist, buttons toward the hand or the elbow: the second way
  * shows the tank upside down. Which way it is worn does not change through
  * the day, so it is the keeper's setting - settings SCREEN: NORMAL / TURNED -

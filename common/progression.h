@@ -45,6 +45,12 @@ int64_t clock_port_now_unix(void);                         /* 0 if unknown */
  * the last load read - 0 for a save from before release numbers, or none */
 uint32_t progression_loaded_release(void);
 int64_t  progression_loaded_unix(void);                    /* the loaded save's wall-clock stamp, 0 = none (a clockless board seeds its clock from it) */
+/* the saved SCREEN setting, read straight from the save without loading the
+ * tank (2026-10-08): update mode and the boot's network pages run before the
+ * tank exists, and a keeper who turned the picture should see them turned
+ * too. false with no save, a foreign one, or a board whose way up is not the
+ * keeper's (TANK_SCREEN_MANUAL 0). */
+bool     progression_peek_screen(void);
 const char *version_port_string(void);                     /* the build's git describe (device: the app
                                                             * descriptor; sim: PT_VERSION) - the settings page */
 

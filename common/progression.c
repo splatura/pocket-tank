@@ -288,6 +288,12 @@ void  progression_setup_done(tank_t *t) { s_setup_pending = false; progression_s
 int   progression_newborn(void)         { return s_newborn; }
 uint32_t progression_loaded_release(void) { return s_loaded_release; }
 int64_t  progression_loaded_unix(void) { return s_loaded_unix; }
+bool progression_peek_screen(void) {
+    if (!TANK_SCREEN_MANUAL) return false;
+    static save_t sv; size_t got = 0;              /* static: ~1.7 KB, off the boot task's stack */
+    if (!persist_port_load(&sv, sizeof sv, &got) || got <= offsetof(save_t, screen_turned) || sv.magic != SAVE_MAGIC) return false;
+    return sv.screen_turned != 0;
+}
 void  progression_newborn_done(tank_t *t) { s_newborn = -1; progression_save(t); }
 
 static void set_ms(fish_t *f, uint32_t bit) { if (!(f->ms_bits & bit)) { f->ms_bits |= bit; mark_dirty(); } }

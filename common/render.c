@@ -3564,7 +3564,7 @@ static const char *const SET_VOLUME[3] = { "OFF", "QUIET", "NORMAL" };
 static const char *const SET_LIGHT[LIGHT_IDLE_N + 1] = { "DOUBLE-TAP",   /* MANUAL, the default: the row says how the light is worked */
     "5 SEC", "15 SEC", "30 SEC", "1 MIN", "3 MIN", "5 MIN", "10 MIN", "30 MIN" };
 static const char *const SET_FEED[2]   = { "ON", "OFF" };          /* the default first */
-#if TANK_WORN
+#if TANK_SCREEN_MANUAL
 static const char *const SET_SCREEN[2] = { "NORMAL", "TURNED" };   /* the default first */
 #endif
 
@@ -3626,11 +3626,14 @@ void render_settings(const tank_t *t, uint16_t *fb, int stride, int bright_pct, 
         set_arrow(&c, SET_SEG_X + SET_SPAN_W - SET_ARW_W, y, true, ch < LIGHT_IDLE_N);
     }
     set_row(&c, SET_ROW4_Y, "AUTO FEED", SET_FEED, 2, t->autofeed_off ? 1 : 0);
-#if TANK_WORN
-    /* SCREEN (2026-10-02): the way up of a watch worn either way round - TURNED
-       for buttons toward the elbow. The picture turns as the finger lifts. */
+#if TANK_SCREEN_MANUAL
+    /* SCREEN (2026-10-02 the watch, 2026-10-08 the FNK0104S): the keeper's way up -
+       TURNED for a watch worn buttons-to-elbow, or an LCD stood on its head.
+       The picture turns as the finger lifts. */
     set_row(&c, SET_ROW5_Y, "SCREEN", SET_SCREEN, 2, t->screen_turned ? 1 : 0);
+#if TANK_WORN
     draw_text(&c, SET_LABEL_X, SET_NOTE5_Y, 2, MSP_DIM, "WORN THE OTHER WAY AROUND?");
+#endif
 #else
     /* ROTATION (0.3.2): the picture turns over with the tank, unless locked */
     {
@@ -3684,7 +3687,7 @@ int render_settings_tap(float x, float y, int *value) {
     if (y >= SET_SEG_Y(SET_ROW4_Y) - 12 && y < SET_SEG_Y(SET_ROW5_Y) - 12) { if (two < 0) return SET_TAP_NONE; *value = two == 0; return SET_TAP_FEED; }
     if (y >= SET_SEG_Y(SET_ROW5_Y) - 12 && y < SET_FOOT_Y - 4) {
         if (two < 0) return SET_TAP_NONE;
-#if TANK_WORN
+#if TANK_SCREEN_MANUAL
         *value = two == 1; return SET_TAP_SCREEN;
 #else
         *value = 0; return SET_TAP_ROTATE;       /* the button or its word: one toggle */

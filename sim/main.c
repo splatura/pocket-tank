@@ -949,7 +949,7 @@ static int selftest_sleep(void) {
                 r = SET_TAP_AT(SETP_SEG_X(1), feed_y);                               /* OFF, for the save below */
                 render_settings(&tank, sfb, TANK_W, 60, 2);
             }
-#if TANK_WORN
+#if TANK_SCREEN_MANUAL
             /* SCREEN (the watch, 2026-10-02): NORMAL by default, the toggle
                turns the picture and back, and the choice rides in the save */
             {
@@ -1216,6 +1216,14 @@ static int selftest_saves(void) {
         f = fopen(getenv("POCKET_TANK_SAVE"), "wb"); fwrite(cut, 1, SAVE_NOW, f); fclose(f);
         tank_init(&tank, 8); progression_wake(&tank, 0);
         if (!progression_setup_pending() || tank.n_fish != 2) { printf("FAIL: a save with another magic loaded\n"); return 1; }
+    }
+    {   /* the SCREEN peek (2026-10-08): what the next boot's early pages read */
+        tank_init(&tank, 8); progression_wake(&tank, 0);
+        tank_screen_set(&tank, true); progression_save(&tank);
+        if (progression_peek_screen() != (bool)TANK_SCREEN_MANUAL) { printf("FAIL: the SCREEN peek read %d\n", progression_peek_screen()); return 1; }
+        tank_screen_set(&tank, false); progression_save(&tank);
+        if (progression_peek_screen()) { printf("FAIL: the SCREEN peek read TURNED from a NORMAL save\n"); return 1; }
+        printf("selftest-saves: the SCREEN peek reads the save without loading it\n");
     }
     /* every cell of THIS world's glass survives a save and a reload (2026-10-08:
      * the LCD40's 30 x 20 = 600 cells sit in the 644 the save keeps; every
@@ -1909,7 +1917,7 @@ static bool updates_view = false;    /* the UPDATES page (the settings page's UP
 static bool update_mode = false;     /* update mode (2026-09-30): what the device runs at boot, before the tank - here the
                                         tank pauses and the pages run over a pretend radio (net_port_sim.c); E enters it */
 static float update_clock;
-/* a worn tank (TANK_WORN, the watch, 2026-10-02): the pretend wearer. T puts
+/* a tank whose way up is the keeper's (TANK_SCREEN_MANUAL: the watch 2026-10-02, the FNK0104S): the pretend wearer. T puts
  * the watch on the other way around (buttons toward the elbow instead of the
  * hand); the window then shows the glass as that wearer sees it - upside down
  * until settings SCREEN is TURNED - and the mouse lands where their finger would. */
@@ -4413,9 +4421,11 @@ int main(int argc, char **argv) {
             } else if (tank.tool == TOOL_HAND && press_y - tank_glass_top(press_x) < 60 && dy >= 40) tank_feed(&tank, (float)mx, 3);
         }
         mdown = mpress;
-        if (TANK_WORN) { static bool tdown; if (k[SDL_SCANCODE_T] && !tdown) {
+        if (TANK_SCREEN_MANUAL) { static bool tdown; if (k[SDL_SCANCODE_T] && !tdown) {
             sim_worn_turned = !sim_worn_turned;
-            printf("the watch is worn %s (settings SCREEN is %s)\n", sim_worn_turned ? "the OTHER way around - buttons toward the elbow" : "the usual way",
+            printf("%s (settings SCREEN is %s)\n",
+                   TANK_WORN ? (sim_worn_turned ? "the watch is worn the OTHER way around - buttons toward the elbow" : "the watch is worn the usual way")
+                             : (sim_worn_turned ? "the tank stands on its head" : "the tank stands the usual way up"),
                    tank.screen_turned ? "TURNED" : "NORMAL");
           } tdown = k[SDL_SCANCODE_T]; }
         if (confirm_view && now_ms - confirm_ms > CONFIRM_MS) { confirm_view = false; printf("reset prompt: timed out, tank kept\n"); }
