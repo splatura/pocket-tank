@@ -2497,7 +2497,7 @@ static void tools_draw(ctx_t *c, const tank_t *t) {
 }
 int render_tools_hit(float x, float y) {
     const int X = RENDER_TOOLS_X, W = RENDER_TOOLS_W;
-    if (y < RENDER_TOOLS_Y || x < X - RENDER_CARD_HIT_SIDE || x >= X + W + RENDER_CARD_HIT_SIDE) return -1;
+    if (y < RENDER_TOOLS_Y || y >= RENDER_TOOLS_HIT_Y1 || x < X - RENDER_CARD_HIT_SIDE || x >= X + W + RENDER_CARD_HIT_SIDE) return -1;
     return x < X + W / 2 ? TOOL_SPONGE : TOOL_SCISSORS;
 }
 

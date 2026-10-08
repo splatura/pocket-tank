@@ -128,6 +128,7 @@ void render_set_card_cache(uint16_t *buf);
 #define RENDER_TOOLS_Y (RENDER_CARD_Y + RENDER_CARD_H + RENDER_TOOLS_GAP)
 #define RENDER_TOOLS_W RENDER_CARD_W
 #define RENDER_TOOLS_H 70
+#define RENDER_TOOLS_HIT_Y1 TANK_H   /* the toolbox's tap test runs down to here (the bezel, where the box is the glass's foot) */
 int  render_tools_hit(float x, float y);
 /* With a tool in hand and no fish card up, a chip at the top left says so:
  * the tool and DONE. A tap on it (render_tool_chip_hit) puts the tool back

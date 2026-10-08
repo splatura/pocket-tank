@@ -4093,6 +4093,65 @@ static int selftest_card(const char *prefix) {
     return 0;
 }
 
+/* --selftest-bounds (2026-10-08, the FNK0104S's 320 px glass - spec R#4): every
+ * tap target and title the layouts name lies wholly on the FRAME. Page
+ * rectangles are page coordinates and are moved by PAGE_X / PAGE_Y; the card
+ * and the toolbox are the frame's. The bowl's circle and the watch's corners
+ * are their own layout blocks' business: this checks the frame's rectangle,
+ * which every board must at least keep. */
+typedef struct { const char *name; int x, y, w, h; bool page; } bounds_rect_t;
+static int selftest_bounds(void) {
+    const bounds_rect_t R[] = {
+        /* the fish card and its toolbox (frame) */
+        { "fish card",               RENDER_CARD_X, RENDER_CARD_Y, RENDER_CARD_W, RENDER_CARD_H, false },
+        { "toolbox",                 RENDER_TOOLS_X, RENDER_TOOLS_Y, RENDER_TOOLS_W, RENDER_TOOLS_H, false },
+        /* milestones (page) */
+        { "milestones first row",    0, MSP_ROW_Y0, PAGE_W, MSP_ROW_H, true },
+        { "milestones last row",     0, MSP_ROW_Y0 + (N_FISH_MAX - 1) * MSP_ROW_H, PAGE_W, MSP_ROW_H, true },
+        { "milestones TANK row",     0, MSP_TANK_Y - 4, PAGE_W, 44, true },
+        { "milestones SETTINGS",     MSP_SET_X, MSP_SET_Y, MSP_SET_W, MSP_CLOSE_H, true },
+        { "milestones UPGRADES",     MSP_UPG_X, MSP_CLOSE_Y, MSP_UPG_W, MSP_CLOSE_H, true },
+        { "milestones CLOSE",        MSP_CLOSE_X, MSP_CLOSE_Y, MSP_CLOSE_W, MSP_CLOSE_H, true },
+        /* settings (page) */
+        { "settings title",          0, SET_TITLE_Y, PAGE_W, 21, true },
+        { "settings row 1",          SET_SEG_X, SET_SEG_Y(SET_ROW1_Y), 3 * SET_SEG_DX, SET_SEG_H, true },
+        { "settings row 5",          SET_SEG_X, SET_SEG_Y(SET_ROW5_Y), 2 * SET_SEG_DX, SET_SEG_H, true },
+        { "settings UPDATES",        SET_UPD_X, SET_FOOT_Y, SET_UPD_W, MSP_CLOSE_H, true },
+        { "settings CLOSE",          SET_CLOSE_X, SET_FOOT_Y, MSP_CLOSE_W, MSP_CLOSE_H, true },
+        /* the shop (page) */
+        { "shop header",             SHP_COIN_X, SHP_COIN_Y, 64, 64, true },
+        { "shop arrows",             SHP_ARROW_X0, SHP_ARROW_Y, SHP_ARROW_X1 + SHP_ARROW_W - SHP_ARROW_X0, SHP_ARROW_H, true },
+        { "shop last row button",    SHP_BTN_X, SHP_ROW_Y0 + (SHP_PER_PAGE - 1) * SHP_ROW_DY, SHP_BTN_W, SHP_BTN_H, true },
+        { "shop CLOSE",              SHP_CLOSE_X, MSP_CLOSE_Y, MSP_CLOSE_W, MSP_CLOSE_H, true },
+        /* the setup flow and the update pages (page) */
+        { "setup panel",             SETUP_X, SETUP_Y, SETUP_W, SETUP_H, true },
+        { "setup title",             SETUP_X, SETUP_TITLE_Y, SETUP_W, 14, true },
+        { "setup top buttons",       SETUP_X, SETUP_TOP_BTN_Y, SETUP_W, SETUP_BTN_H, true },
+        { "setup foot buttons",      SETUP_X, SETUP_BTN_Y, SETUP_W, SETUP_BTN_H, true },
+        { "update title",            0, UPD_TITLE_Y, PAGE_W, 21, true },
+        { "update subtitle",         0, UPD_SUB_Y, PAGE_W, 14, true },
+        { "update panel",            UPD_PANEL_X, UPD_PANEL_Y, UPD_PANEL_W, UPD_PANEL_H, true },
+        { "update CHECK",            UPD_CHECK_X, UPD_CHECK_Y, UPD_CHECK_W, UPD_CHECK_H, true },
+        { "update foot buttons",     UPD_BTN_L_X, UPD_BTN_Y, UPD_BTN_R_X + UPD_BTN_W - UPD_BTN_L_X, UPD_BTN_H, true },
+        { "update CLOSE",            UPD_CLOSE_X, UPD_CLOSE_Y, UPD_CLOSE_W, UPD_CLOSE_H, true },
+    };
+    int fails = 0;
+    for (size_t i = 0; i < sizeof R / sizeof R[0]; i++) {
+        int x = R[i].x + (R[i].page ? PAGE_X : 0), y = R[i].y + (R[i].page ? PAGE_Y : 0);
+        bool ok = x >= 0 && y >= 0 && x + R[i].w <= TANK_W && y + R[i].h <= TANK_H;
+        printf("selftest-bounds: %-24s frame %4d,%4d %3dx%3d %s\n", R[i].name, x, y, R[i].w, R[i].h, ok ? "ok" : "OFF THE GLASS");
+        if (!ok) fails++;
+    }
+    /* the fullest milestones page: the last row ends above the TANK row's divider (Review Focus 3) */
+    if (MSP_ROW_Y0 + N_FISH_MAX * MSP_ROW_H > MSP_TANK_Y - 4) { printf("FAIL: the sixth milestones row runs into the TANK row (%d > %d)\n", MSP_ROW_Y0 + N_FISH_MAX * MSP_ROW_H, MSP_TANK_Y - 4); fails++; }
+    /* the toolbox's tap test stops where its box does when it is not the bottom of the glass */
+    if (render_tools_hit(RENDER_TOOLS_X + 20, RENDER_TOOLS_Y + RENDER_TOOLS_H / 2) != TOOL_SPONGE) { printf("FAIL: the toolbox's sponge does not answer at its centre\n"); fails++; }
+    if (RENDER_TOOLS_HIT_Y1 < TANK_H && render_tools_hit(RENDER_TOOLS_X + 20, RENDER_TOOLS_HIT_Y1 + 2) >= 0) { printf("FAIL: the toolbox answers below its own box\n"); fails++; }
+    if (fails) { printf("FAIL: %d layout rectangles are off the glass (or overlap)\n", fails); return 1; }
+    printf("selftest-bounds: OK\n");
+    return 0;
+}
+
 int main(int argc, char **argv) {
     for (int a = 1; a < argc; a++)
         if (strcmp(argv[a], "--greedy") == 0) advisor_core_sample = false;
@@ -4110,6 +4169,7 @@ int main(int argc, char **argv) {
         if (strcmp(argv[a], "--selftest-saves") == 0) return selftest_saves();
         if (strcmp(argv[a], "--selftest-pop") == 0) return selftest_pop();
         if (strcmp(argv[a], "--selftest-card") == 0) return selftest_card(a + 1 < argc ? argv[a + 1] : NULL);
+        if (strcmp(argv[a], "--selftest-bounds") == 0) return selftest_bounds();
         if (strcmp(argv[a], "--selftest-sleep") == 0) return selftest_sleep();
         if (strcmp(argv[a], "--selftest-tend") == 0) return selftest_tend();
         if (strcmp(argv[a], "--selftest-update") == 0) return selftest_update();

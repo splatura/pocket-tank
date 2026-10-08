@@ -147,6 +147,7 @@ enum { SETUP_PG_RENAME = SETUP_PG_PLACE + 1 };
 #define SETUP_MID_X  (SETUP_X + (SETUP_W - SETUP_BTN_W) / 2)
 #define SETUP_TOP_BTN_W 84                                 /* name / look: the top row */
 #define SETUP_TOP_BTN_Y (SETUP_Y + 24)
+#define SETUP_TITLE_Y (SETUP_Y + 7)
 #define SETUP_TOP_BACK_X (SETUP_X + 12)
 #define SETUP_TOP_NEXT_X (SETUP_X + SETUP_W - 12 - SETUP_TOP_BTN_W)
 /* the letter wheel: FISH_NAME_MAX slots of a 6x font (30 x 42 px glyphs) at

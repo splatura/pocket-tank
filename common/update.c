@@ -22,10 +22,10 @@
 #define C_WARN   0xf2b65b     /* amber: never the only signal (Strato is color blind) */
 
 /* the panel the setup uses: inside the bezel curve */
-#define UX   32
-#define UY   16
+#define UX   UPD_PANEL_X
+#define UY   UPD_PANEL_Y
 #define UW   UPD_PANEL_W
-#define UH   326
+#define UH   UPD_PANEL_H
 #define CX   (PAGE_W / 2)
 
 /* ---- the case-sensitive 5x7 font: every printable ASCII character ----
@@ -156,7 +156,7 @@ static bool in_box(float x, float y, int bx, int by, int bw, int bh, int slop) {
 
 void render_updates_page(uint16_t *fb, int stride) {
     page_bg(fb, stride);
-    text_c(fb, stride, 14, 3, C_TEXT, "UPDATES");
+    text_c(fb, stride, UPD_TITLE_Y, 3, C_TEXT, "UPDATES");
     char line[64];
     snprintf(line, sizeof line, "VERSION %s %s", PT_RELEASE, PT_RELEASE_STAGE);
     render_text(fb, stride, 32, 62, 2, C_TEXT, line);
@@ -629,7 +629,7 @@ void render_update(uint16_t *fb, int stride, float clock) {
         if (s.step != STEP_RESTART) render_button(fb, stride, UPD_BTN_MID_X, UPD_BTN_Y, UPD_BTN_W, UPD_BTN_H, C_INNER, C_EDGE, "CANCEL", 2);
         break;
     case UPD_PG_SCAN: {
-        text_c(fb, stride, 22, 2, C_CAPT, "CHOOSE YOUR NETWORK");
+        text_c(fb, stride, UPD_SUB_Y, 2, C_CAPT, "CHOOSE YOUR NETWORK");
         int pages = (s.n_aps + UPD_ROWS_PER - 1) / UPD_ROWS_PER;
         for (int r = 0; r < UPD_ROWS_PER; r++) {
             int i = s.list_page * UPD_ROWS_PER + r; if (i >= s.n_aps) break;
@@ -650,8 +650,8 @@ void render_update(uint16_t *fb, int stride, float clock) {
         render_button(fb, stride, UPD_BTN_R_X, UPD_BTN_Y, UPD_BTN_W, UPD_BTN_H, C_INNER, C_EDGE, "SCAN AGAIN", 2);
         break; }
     case UPD_PG_PASSWORD:
-        render_text(fb, stride, UX + (PAGE_BOWL ? 30 : 0), 22, 2, C_CAPT, "PASSWORD FOR");
-        update_text(fb, stride, UX + (PAGE_BOWL ? 30 : 0) + render_text_w("PASSWORD FOR", 2) + 12, 22, 2, C_TEXT, s.ssid);
+        render_text(fb, stride, UX + (PAGE_BOWL ? 30 : 0), UPD_SUB_Y, 2, C_CAPT, "PASSWORD FOR");
+        update_text(fb, stride, UX + (PAGE_BOWL ? 30 : 0) + render_text_w("PASSWORD FOR", 2) + 12, UPD_SUB_Y, 2, C_TEXT, s.ssid);
         draw_field(fb, stride, clock);
         draw_keyboard(fb, stride);
         break;

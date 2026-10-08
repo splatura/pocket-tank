@@ -568,7 +568,7 @@ void render_setup(const tank_t *t, uint16_t *fb, int stride, float clock) {
         dots(fb, stride, SETUP_Y + SETUP_H - 8);
     } else if (s_page == SETUP_PG_BUBBLES) {
         /* the live tank with a stripe down the column: drag it anywhere */
-        text_c(fb, stride, CX, SETUP_Y + 7, 2, C_CAPT, "PLACE THE BUBBLES");
+        text_c(fb, stride, CX, SETUP_TITLE_Y, 2, C_CAPT, "PLACE THE BUBBLES");
         nav(fb, stride, true, "NEXT", false);
         int bx = (int)t->bubble_x - PAGE_X;
         render_rect_blend(fb, stride, bx - 22, SETUP_TOP_BTN_Y + SETUP_BTN_H + 10, 44, FLOOR - (SETUP_TOP_BTN_Y + SETUP_BTN_H + 10), C_EDGE, 46);
@@ -580,7 +580,7 @@ void render_setup(const tank_t *t, uint16_t *fb, int stride, float clock) {
            anywhere on the water; the layer row picks its depth (the tank
            under the page redraws with it, so the fish and grass show the choice) */
         char title[40]; snprintf(title, sizeof title, "PLACE THE %s", SD_ITEMS[s_item].name);
-        text_c(fb, stride, CX, SETUP_Y + 7, 2, C_CAPT, title);
+        text_c(fb, stride, CX, SETUP_TITLE_Y, 2, C_CAPT, title);
         render_button(fb, stride, SETUP_TOP_NEXT_X, SETUP_TOP_BTN_Y, SETUP_TOP_BTN_W, SETUP_BTN_H, C_GO, C_GO_E, "DONE", 2);
         /* SELL, top left (2026-09-24): a tap arms it and names the refund, a
            second tap sells the piece back to the shop and closes the page */
@@ -657,7 +657,7 @@ void render_setup(const tank_t *t, uint16_t *fb, int stride, float clock) {
         const fish_t *f = &t->fish[page_fish()];
         bool grid = s_kbd == SETUP_KBD_GRID;
         panel(fb, stride);
-        text_c(fb, stride, CX, SETUP_Y + (grid ? 12 : 7), 2, C_CAPT, s_rename ? "RENAME YOUR FISH" : s_birth ? "NAME THE NEW FRY" : page_fish() == 0 ? "NAME THE FIRST FISH" : "NAME THE SECOND FISH");
+        text_c(fb, stride, CX, (grid ? SETUP_Y + 12 : SETUP_TITLE_Y), 2, C_CAPT, s_rename ? "RENAME YOUR FISH" : s_birth ? "NAME THE NEW FRY" : page_fish() == 0 ? "NAME THE FIRST FISH" : "NAME THE SECOND FISH");
         if (grid) render_fish_preview(fb, stride, SETUP_X + 88, SETUP_Y + 72, 2.0f, f->color, f->fin, f->accent, clock);
         const int SL = 22, NX = grid ? SETUP_X + 160 : CX - FISH_NAME_MAX * SL / 2 + 2, NY = grid ? SETUP_Y + 58 : SETUP_TOP_BTN_Y + (SETUP_BTN_H - 28) / 2;
         int n = name_len(f);
@@ -694,7 +694,7 @@ void render_setup(const tank_t *t, uint16_t *fb, int stride, float clock) {
         const fish_t *f = &t->fish[page_fish()];
         fish_ring(fb, stride, f, 17 * f->size + 6, f->color);
         render_rect_blend(fb, stride, -PAGE_X, SETUP_SLOT_Y - SETUP_ARROW_GAP - 2, TANK_W, SETUP_SLOT_H + 2 * SETUP_ARROW_GAP + 36, C_PANEL, 150);
-        text_c(fb, stride, CX, SETUP_Y + 7, 2, C_CAPT, s_rename ? "RENAME YOUR FISH" : s_birth ? "NAME THE NEW FRY" : page_fish() == 0 ? "NAME THE FIRST FISH" : "NAME THE SECOND FISH");
+        text_c(fb, stride, CX, SETUP_TITLE_Y, 2, C_CAPT, s_rename ? "RENAME YOUR FISH" : s_birth ? "NAME THE NEW FRY" : page_fish() == 0 ? "NAME THE FIRST FISH" : "NAME THE SECOND FISH");
         nav(fb, stride, true, s_rename ? "DONE" : "NEXT", s_rename);
         int n = name_len(f);
         if (s_slot > n) s_slot = n;
@@ -721,7 +721,7 @@ void render_setup(const tank_t *t, uint16_t *fb, int stride, float clock) {
         fish_ring(fb, stride, f, 17 * f->size + 6, f->color);
         render_rect_blend(fb, stride, -PAGE_X, SETUP_SW_Y - 30, TANK_W, SETUP_ACC_Y + SETUP_SW_H + 16 - (SETUP_SW_Y - 30), C_PANEL, 110);
         char cap[FISH_NAME_MAX + 16]; snprintf(cap, sizeof cap, "A COLOR FOR %s", f->name);
-        text_c(fb, stride, CX, SETUP_Y + 7, 2, C_CAPT, cap);
+        text_c(fb, stride, CX, SETUP_TITLE_Y, 2, C_CAPT, cap);
         nav(fb, stride, true, "NEXT", false);
         render_text(fb, stride, SETUP_SW_X + 2, SETUP_SW_Y - 20, 2, C_CAPT, "BODY");
         for (int i = 0; i < SETUP_SW_N; i++) {
