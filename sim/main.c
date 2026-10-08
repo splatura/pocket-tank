@@ -4099,47 +4099,47 @@ static int selftest_card(const char *prefix) {
  * and the toolbox are the frame's. The bowl's circle and the watch's corners
  * are their own layout blocks' business: this checks the frame's rectangle,
  * which every board must at least keep. */
-typedef struct { const char *name; int x, y, w, h; bool page; } bounds_rect_t;
+typedef struct { const char *name; int x, y, w, h; bool page, band; } bounds_rect_t;   /* band: a row or a line of text, full page width - only its vertical extent must lie on the glass (the watch's 448 page overhangs its 410 glass) */
 static int selftest_bounds(void) {
     const bounds_rect_t R[] = {
         /* the fish card and its toolbox (frame) */
-        { "fish card",               RENDER_CARD_X, RENDER_CARD_Y, RENDER_CARD_W, RENDER_CARD_H, false },
-        { "toolbox",                 RENDER_TOOLS_X, RENDER_TOOLS_Y, RENDER_TOOLS_W, RENDER_TOOLS_H, false },
+        { "fish card",               RENDER_CARD_X, RENDER_CARD_Y, RENDER_CARD_W, RENDER_CARD_H, false, false },
+        { "toolbox",                 RENDER_TOOLS_X, RENDER_TOOLS_Y, RENDER_TOOLS_W, RENDER_TOOLS_H, false, false },
         /* milestones (page) */
-        { "milestones first row",    0, MSP_ROW_Y0, PAGE_W, MSP_ROW_H, true },
-        { "milestones last row",     0, MSP_ROW_Y0 + (N_FISH_MAX - 1) * MSP_ROW_H, PAGE_W, MSP_ROW_H, true },
-        { "milestones TANK row",     0, MSP_TANK_Y - 4, PAGE_W, 44, true },
-        { "milestones SETTINGS",     MSP_SET_X, MSP_SET_Y, MSP_SET_W, MSP_CLOSE_H, true },
-        { "milestones UPGRADES",     MSP_UPG_X, MSP_CLOSE_Y, MSP_UPG_W, MSP_CLOSE_H, true },
-        { "milestones CLOSE",        MSP_CLOSE_X, MSP_CLOSE_Y, MSP_CLOSE_W, MSP_CLOSE_H, true },
+        { "milestones first row",    0, MSP_ROW_Y0, PAGE_W, MSP_ROW_H, true, true },
+        { "milestones last row",     0, MSP_ROW_Y0 + (N_FISH_MAX - 1) * MSP_ROW_H, PAGE_W, MSP_ROW_H, true, true },
+        { "milestones TANK row",     0, MSP_TANK_Y - 4, PAGE_W, 44, true, true },
+        { "milestones SETTINGS",     MSP_SET_X, MSP_SET_Y, MSP_SET_W, MSP_CLOSE_H, true, false },
+        { "milestones UPGRADES",     MSP_UPG_X, MSP_CLOSE_Y, MSP_UPG_W, MSP_CLOSE_H, true, false },
+        { "milestones CLOSE",        MSP_CLOSE_X, MSP_CLOSE_Y, MSP_CLOSE_W, MSP_CLOSE_H, true, false },
         /* settings (page) */
-        { "settings title",          0, SET_TITLE_Y, PAGE_W, 21, true },
-        { "settings row 1",          SET_SEG_X, SET_SEG_Y(SET_ROW1_Y), 3 * SET_SEG_DX, SET_SEG_H, true },
-        { "settings row 5",          SET_SEG_X, SET_SEG_Y(SET_ROW5_Y), 2 * SET_SEG_DX, SET_SEG_H, true },
-        { "settings UPDATES",        SET_UPD_X, SET_FOOT_Y, SET_UPD_W, MSP_CLOSE_H, true },
-        { "settings CLOSE",          SET_CLOSE_X, SET_FOOT_Y, MSP_CLOSE_W, MSP_CLOSE_H, true },
+        { "settings title",          0, SET_TITLE_Y, PAGE_W, 21, true, true },
+        { "settings row 1",          SET_SEG_X, SET_SEG_Y(SET_ROW1_Y), 3 * SET_SEG_DX, SET_SEG_H, true, false },
+        { "settings row 5",          SET_SEG_X, SET_SEG_Y(SET_ROW5_Y), 2 * SET_SEG_DX, SET_SEG_H, true, false },
+        { "settings UPDATES",        SET_UPD_X, SET_FOOT_Y, SET_UPD_W, MSP_CLOSE_H, true, false },
+        { "settings CLOSE",          SET_CLOSE_X, SET_FOOT_Y, MSP_CLOSE_W, MSP_CLOSE_H, true, false },
         /* the shop (page) */
-        { "shop header",             SHP_COIN_X, SHP_COIN_Y, 64, 64, true },
-        { "shop arrows",             SHP_ARROW_X0, SHP_ARROW_Y, SHP_ARROW_X1 + SHP_ARROW_W - SHP_ARROW_X0, SHP_ARROW_H, true },
-        { "shop last row button",    SHP_BTN_X, SHP_ROW_Y0 + (SHP_PER_PAGE - 1) * SHP_ROW_DY, SHP_BTN_W, SHP_BTN_H, true },
-        { "shop CLOSE",              SHP_CLOSE_X, MSP_CLOSE_Y, MSP_CLOSE_W, MSP_CLOSE_H, true },
+        { "shop header",             SHP_COIN_X, SHP_COIN_Y, 64, 64, true, false },
+        { "shop arrows",             SHP_ARROW_X0, SHP_ARROW_Y, SHP_ARROW_X1 + SHP_ARROW_W - SHP_ARROW_X0, SHP_ARROW_H, true, false },
+        { "shop last row button",    SHP_BTN_X, SHP_ROW_Y0 + (SHP_PER_PAGE - 1) * SHP_ROW_DY, SHP_BTN_W, SHP_BTN_H, true, false },
+        { "shop CLOSE",              SHP_CLOSE_X, MSP_CLOSE_Y, MSP_CLOSE_W, MSP_CLOSE_H, true, false },
         /* the setup flow and the update pages (page) */
-        { "setup panel",             SETUP_X, SETUP_Y, SETUP_W, SETUP_H, true },
-        { "setup title",             SETUP_X, SETUP_TITLE_Y, SETUP_W, 14, true },
-        { "setup top buttons",       SETUP_X, SETUP_TOP_BTN_Y, SETUP_W, SETUP_BTN_H, true },
-        { "setup foot buttons",      SETUP_X, SETUP_BTN_Y, SETUP_W, SETUP_BTN_H, true },
-        { "update title",            0, UPD_TITLE_Y, PAGE_W, 21, true },
-        { "update subtitle",         0, UPD_SUB_Y, PAGE_W, 14, true },
-        { "update panel",            UPD_PANEL_X, UPD_PANEL_Y, UPD_PANEL_W, UPD_PANEL_H, true },
-        { "update CHECK",            UPD_CHECK_X, UPD_CHECK_Y, UPD_CHECK_W, UPD_CHECK_H, true },
+        { "setup panel",             SETUP_X, SETUP_Y, SETUP_W, SETUP_H, true, false },
+        { "setup title",             SETUP_X, SETUP_TITLE_Y, SETUP_W, 14, true, false },
+        { "setup top buttons",       SETUP_X, SETUP_TOP_BTN_Y, SETUP_W, SETUP_BTN_H, true, false },
+        { "setup foot buttons",      SETUP_X, SETUP_BTN_Y, SETUP_W, SETUP_BTN_H, true, false },
+        { "update title",            0, UPD_TITLE_Y, PAGE_W, 21, true, true },
+        { "update subtitle",         0, UPD_SUB_Y, PAGE_W, 14, true, true },
+        { "update panel",            UPD_PANEL_X, UPD_PANEL_Y, UPD_PANEL_W, UPD_PANEL_H, true, false },
+        { "update CHECK",            UPD_CHECK_X, UPD_CHECK_Y, UPD_CHECK_W, UPD_CHECK_H, true, false },
         { "update foot buttons",     UPD_BTN_L_X, UPD_BTN_Y, UPD_BTN_R_X + UPD_BTN_W - UPD_BTN_L_X, UPD_BTN_H, true },
         { "update CLOSE",            UPD_CLOSE_X, UPD_CLOSE_Y, UPD_CLOSE_W, UPD_CLOSE_H, true },
     };
     int fails = 0;
     for (size_t i = 0; i < sizeof R / sizeof R[0]; i++) {
         int x = R[i].x + (R[i].page ? PAGE_X : 0), y = R[i].y + (R[i].page ? PAGE_Y : 0);
-        bool ok = x >= 0 && y >= 0 && x + R[i].w <= TANK_W && y + R[i].h <= TANK_H;
-        printf("selftest-bounds: %-24s frame %4d,%4d %3dx%3d %s\n", R[i].name, x, y, R[i].w, R[i].h, ok ? "ok" : "OFF THE GLASS");
+        bool ok = y >= 0 && y + R[i].h <= TANK_H && (R[i].band || (x >= 0 && x + R[i].w <= TANK_W));
+        printf("selftest-bounds: %-24s frame %4d,%4d %3dx%3d%s %s\n", R[i].name, x, y, R[i].w, R[i].h, R[i].band ? " (band)" : "", ok ? "ok" : "OFF THE GLASS");
         if (!ok) fails++;
     }
     /* the fullest milestones page: the last row ends above the TANK row's divider (Review Focus 3) */
