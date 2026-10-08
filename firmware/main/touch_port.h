@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include "tank.h"
 bool touch_port_init(void);
+bool touch_port_resume(void);   /* after a light-sleep nap: the FNK0104S's chip re-initialised if it went quiet; elsewhere a no-op */
 bool touch_port_deep_sleep(void);   /* the night's deep sleep: the chip's own sleep, its reset left high (true = it took it); the wake is a reboot */
 void touch_port_poll(tank_t *t);
 int  touch_port_selected(void);   /* tapped fish for the stats card, RENDER_CARD_SNAIL for the snail's, -1 = none */

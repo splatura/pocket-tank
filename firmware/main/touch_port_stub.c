@@ -1,5 +1,6 @@
 #include "touch_port.h"
 bool touch_port_init(void) { return false; }
+bool touch_port_resume(void) { return true; }
 bool touch_port_deep_sleep(void) { return false; }
 void touch_port_poll(tank_t *t) { (void)t; }
 int  touch_port_selected(void) { return -1; }

@@ -176,18 +176,21 @@ static bool cst9217_read(uint16_t *x, uint16_t *y) {
  * finger count, then the first point's XH (event in bits 7:6, 1 = lift) XL
  * YH YL, 12 bits each, in panel px, unmirrored. */
 static i2c_master_dev_handle_t s_ft;
-static bool ft3168_init(void) {
-    gpio_config_t rst = { .pin_bit_mask = 1ULL << W_PIN_TP_RST, .mode = GPIO_MODE_OUTPUT };
-    gpio_config(&rst); gpio_sleep_sel_dis(W_PIN_TP_RST);
-    gpio_set_level(W_PIN_TP_RST, 0); vTaskDelay(pdMS_TO_TICKS(10));
-    gpio_set_level(W_PIN_TP_RST, 1); vTaskDelay(pdMS_TO_TICKS(300));   /* its boot: it answers nothing sooner */
-    if (i2c_master_probe(board_i2c_bus(), I2C_ADDR_FT3168, 50) != ESP_OK) { ESP_LOGW(TAG, "no FT3168"); return false; }
-    i2c_device_config_t cfg = { .dev_addr_length = I2C_ADDR_BIT_LEN_7, .device_address = I2C_ADDR_FT3168, .scl_speed_hz = 400000,
+static uint16_t s_ft_w, s_ft_h;                    /* the panel's px, for the reader's clamp */
+static bool ft_direct_init(gpio_num_t rst, int boot_ms, uint8_t addr, uint16_t w, uint16_t h, const char *what) {
+    gpio_config_t r = { .pin_bit_mask = 1ULL << rst, .mode = GPIO_MODE_OUTPUT };
+    gpio_config(&r); gpio_sleep_sel_dis(rst);
+    gpio_set_level(rst, 0); vTaskDelay(pdMS_TO_TICKS(10));
+    gpio_set_level(rst, 1); vTaskDelay(pdMS_TO_TICKS(boot_ms));   /* its boot: it answers nothing sooner */
+    if (i2c_master_probe(board_i2c_bus(), addr, 50) != ESP_OK) { ESP_LOGW(TAG, "no %s", what); return false; }
+    i2c_device_config_t cfg = { .dev_addr_length = I2C_ADDR_BIT_LEN_7, .device_address = addr, .scl_speed_hz = 400000,
                                 .flags.disable_ack_check = 1 };
     if (i2c_master_bus_add_device(board_i2c_bus(), &cfg, &s_ft) != ESP_OK) { s_ft = NULL; return false; }
-    ESP_LOGI(TAG, "FT3168 ready (the watch: read directly)");
+    s_ft_w = w; s_ft_h = h;
+    ESP_LOGI(TAG, "%s ready (read directly)", what);
     return true;
 }
+static bool ft3168_init(void) { return ft_direct_init(W_PIN_TP_RST, 300, I2C_ADDR_FT3168, W_PANEL_W, W_PANEL_H, "FT3168 (the watch)"); }
 static bool ft3168_read(uint16_t *x, uint16_t *y) {
     static uint16_t lx, ly; static int64_t seen_us; static bool down;
     uint8_t reg = 0x02, d[5] = { 0 };
@@ -195,8 +198,8 @@ static bool ft3168_read(uint16_t *x, uint16_t *y) {
     bool answered = i2c_master_transmit_receive(s_ft, &reg, 1, d, sizeof d, 20) == ESP_OK && (d[0] & 0x0F) <= 2 && d[0] != 0xFF;
     if (answered && (d[0] & 0x0F) >= 1 && (d[1] >> 6) != 1) {
         int rx = ((d[1] & 0x0F) << 8) | d[2], ry = ((d[3] & 0x0F) << 8) | d[4];
-        if (rx > W_PANEL_W - 1) rx = W_PANEL_W - 1;
-        if (ry > W_PANEL_H - 1) ry = W_PANEL_H - 1;
+        if (rx > s_ft_w - 1) rx = s_ft_w - 1;
+        if (ry > s_ft_h - 1) ry = s_ft_h - 1;
         lx = (uint16_t)rx; ly = (uint16_t)ry;
         if (!down) s_cst_gaps = 0;
         seen_us = s_seen_us = now; down = true;
@@ -219,7 +222,20 @@ static bool panel_read(uint16_t *x, uint16_t *y) {
     return true;
 }
 
+bool touch_port_resume(void) {
+#ifdef TANK_LCD40
+    if (s_ft && i2c_master_probe(board_i2c_bus(), I2C_ADDR_FT6336, 50) == ESP_OK) return true;
+    if (s_ft) { i2c_master_bus_rm_device(s_ft); s_ft = NULL; }
+    return ft_direct_init(F_PIN_TP_RST, 300, I2C_ADDR_FT6336, F_PANEL_W, F_PANEL_H, "FT6336 (after the nap)");
+#else
+    return true;
+#endif
+}
+
 bool touch_port_init(void) {
+#ifdef TANK_LCD40                                     /* the FNK0104S: an FT6336 on its own bus, no expander, no esp_lcd_touch */
+    return ft_direct_init(F_PIN_TP_RST, 300, I2C_ADDR_FT6336, F_PANEL_W, F_PANEL_H, "FT6336 (the FNK0104S)");
+#endif
     if (board_is_round()) return cst9217_init();
     if (board_is_watch()) return ft3168_init();
     esp_lcd_panel_io_handle_t io;
@@ -353,6 +369,13 @@ static void map_touch(uint16_t px, uint16_t py, float *tx, float *ty) {
         float fx, fy; display_port_panel_to_tank(px, py, &fx, &fy);
         rx = (int)fx; ry = (int)fy;
     }
+#ifdef TANK_LCD40                                     /* the panel's report against the picture: set on the bench (bench step 3).
+                                                         0 = as the 1.8's formula; 1 = turned 180 degrees, as the 2.8in sibling's read */
+#ifndef F_TOUCH_TURN
+#define F_TOUCH_TURN 0
+#endif
+    if (F_TOUCH_TURN) { rx = TANK_W - 1 - rx; ry = TANK_H - 1 - ry; }
+#endif
     if (rx < s_raw_x0) s_raw_x0 = rx;
     if (rx > s_raw_x1) s_raw_x1 = rx;
     if (ry < s_raw_y0) s_raw_y0 = ry;

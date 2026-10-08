@@ -356,6 +356,7 @@ static void enter_sleep_for(int wake_after_s) {
         progression_woke(&tank);                /* a fry that was on its way: born now (2026-09-24) */
         battery_woke(&s_bh);                    /* what the gauge lost asleep is no screen-on drain */
         display_port_wake();
+        touch_port_resume();
         imu_port_wake();
         batlog_add(battery_pct(), battery_port_vbat_mv(), 0, true, "nap");
         s_snap_n = 0; s_btn_armed = false; s_btn_low_since = 0;   /* require a fresh press */
